@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Cancel01Icon, Download01Icon, ViewIcon } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
 import { payrollService } from '../../services/api'
@@ -61,78 +61,78 @@ export const PayslipViewer: React.FC = () => {
   const getNetSalary = (p: Payroll) => p.summary?.net_salary ?? p.net_salary ?? 0
 
   return (
-    <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-xl">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+    <div className="bg-card rounded-2xl p-5 lg:p-6 border border-border shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Slip Gaji Digital (Payslip)</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Arsip dokumen penghasilan resmi yang telah disahkan oleh HR Manager
+          <h2 className="text-lg font-semibold text-foreground tracking-tight">Slip Gaji Digital (Payslip)</h2>
+          <p className="text-xs text-muted-foreground mt-0.5 font-normal">
+            Arsip dokumen penghasilan resmi yang telah disahkan oleh HR Manager.
           </p>
         </div>
       </div>
 
       {/* Payslips Table */}
-      <div className="overflow-x-auto mt-6">
+      <div className="overflow-x-auto mt-4">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
-              <th className="pb-3 px-3">No. Slip Gaji</th>
-              <th className="pb-3 px-3">Periode Payroll</th>
-              <th className="pb-3 px-3">Gaji Pokok</th>
-              <th className="pb-3 px-3">Tunjangan & Lembur</th>
-              <th className="pb-3 px-3">Potongan</th>
-              <th className="pb-3 px-3">Take Home Pay</th>
-              <th className="pb-3 px-3 text-right">Aksi Dokumen</th>
+            <tr className="border-b border-border text-[11px] font-medium uppercase text-muted-foreground/80">
+              <th className="pb-2.5 px-3">No. Slip Gaji</th>
+              <th className="pb-2.5 px-3">Periode Payroll</th>
+              <th className="pb-2.5 px-3">Gaji Pokok</th>
+              <th className="pb-2.5 px-3">Tunjangan & Lembur</th>
+              <th className="pb-2.5 px-3">Potongan</th>
+              <th className="pb-2.5 px-3">Take Home Pay</th>
+              <th className="pb-2.5 px-3 text-right">Aksi Dokumen</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-border">
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-400">
+                <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
                   Memuat data slip gaji...
                 </td>
               </tr>
             ) : payslips.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-400">
+                <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
                   Belum ada slip gaji yang dipublikasikan untuk akun ini.
                 </td>
               </tr>
             ) : (
               payslips.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-3 px-3 font-mono text-xs font-bold text-indigo-600">
+                <tr key={p.id} className="hover:bg-muted/40 transition-colors">
+                  <td className="py-2.5 px-3 text-xs font-normal text-primary">
                     {p.payslip_number}
                   </td>
-                  <td className="py-3 px-3 font-medium text-slate-900">
+                  <td className="py-2.5 px-3 font-normal text-xs text-foreground">
                     {p.period?.name || 'Periode Bulanan'}
                   </td>
-                  <td className="py-3 px-3 text-xs">{formatRupiah(getBasicSalary(p))}</td>
-                  <td className="py-3 px-3 text-xs text-emerald-600 font-semibold">
+                  <td className="py-2.5 px-3 text-xs font-normal text-muted-foreground">{formatRupiah(getBasicSalary(p))}</td>
+                  <td className="py-2.5 px-3 text-xs text-emerald-600 dark:text-emerald-400 font-normal">
                     +{formatRupiah(getAllowancesAndOt(p))}
                   </td>
-                  <td className="py-3 px-3 text-xs text-rose-600 font-semibold">
+                  <td className="py-2.5 px-3 text-xs text-rose-600 dark:text-rose-400 font-normal">
                     -{formatRupiah(getTotalDeductions(p))}
                   </td>
-                  <td className="py-3 px-3 font-bold text-slate-900 font-mono text-sm">
+                  <td className="py-2.5 px-3 font-semibold text-foreground text-xs">
                     {formatRupiah(getNetSalary(p))}
                   </td>
-                  <td className="py-3 px-3 text-right space-x-2">
+                  <td className="py-2.5 px-3 text-right space-x-1.5">
                     <button
                       type="button"
                       onClick={() => setSelectedSlip(p)}
-                      className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 inline-flex items-center space-x-1"
+                      className="px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 inline-flex items-center space-x-1"
                     >
-                      <Icon icon={ViewIcon} size={15} />
+                      <Icon icon={ViewIcon} size={14} />
                       <span>Rincian</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDownloadPdf(p)}
                       disabled={isDownloading === p.id}
-                      className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 inline-flex items-center space-x-1 shadow-sm"
+                      className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 inline-flex items-center space-x-1 shadow-xs"
                     >
-                      <Icon icon={Download01Icon} size={15} />
+                      <Icon icon={Download01Icon} size={14} />
                       <span>{isDownloading === p.id ? 'Mengunduh...' : 'PDF'}</span>
                     </button>
                   </td>
@@ -145,46 +145,46 @@ export const PayslipViewer: React.FC = () => {
 
       {/* Breakdown Modal */}
       {selectedSlip && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl p-6 lg:p-8 max-w-lg w-full shadow-2xl border border-slate-100 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-card rounded-2xl p-6 max-w-lg w-full shadow-xl border border-border relative">
             <button
               type="button"
               onClick={() => setSelectedSlip(null)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1"
             >
-              <Icon icon={Cancel01Icon} size={20} />
+              <Icon icon={Cancel01Icon} size={18} />
             </button>
 
             <div className="flex items-center space-x-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+              <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-medium">
                 ✓ Sah & Otorisasi HR
               </span>
             </div>
-            <h3 className="text-xl font-bold text-slate-900">Rincian Slip Gaji Karyawan</h3>
-            <p className="text-xs font-mono text-indigo-600 mb-6">{selectedSlip.payslip_number}</p>
+            <h3 className="text-base font-semibold text-foreground">Rincian Slip Gaji Karyawan</h3>
+            <p className="text-xs text-primary mb-5 font-normal">{selectedSlip.payslip_number}</p>
 
             <div className="space-y-4">
               {/* Earnings */}
               <div>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
                   Penghasilan & Tunjangan
                 </div>
-                <div className="space-y-1.5 bg-slate-50 p-3 rounded-2xl border border-slate-100 text-sm">
+                <div className="space-y-1.5 bg-muted/30 p-3 rounded-xl border border-border text-xs">
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Gaji Pokok</span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="text-muted-foreground font-normal">Gaji Pokok</span>
+                    <span className="font-normal text-foreground">
                       {formatRupiah(getBasicSalary(selectedSlip))}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Tunjangan Tetap</span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="text-muted-foreground font-normal">Tunjangan Tetap</span>
+                    <span className="font-normal text-foreground">
                       {formatRupiah(selectedSlip.summary?.total_allowances ?? selectedSlip.total_allowances)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Upah Lembur (Depnaker)</span>
-                    <span className="font-semibold text-emerald-600">
+                    <span className="text-muted-foreground font-normal">Upah Lembur (Depnaker)</span>
+                    <span className="font-normal text-emerald-600 dark:text-emerald-400">
                       +{formatRupiah(selectedSlip.summary?.total_overtime_pay ?? selectedSlip.total_overtime_pay)}
                     </span>
                   </div>
@@ -193,31 +193,31 @@ export const PayslipViewer: React.FC = () => {
 
               {/* Deductions */}
               <div>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
                   Potongan & Kewajiban
                 </div>
-                <div className="space-y-1.5 bg-slate-50 p-3 rounded-2xl border border-slate-100 text-sm">
+                <div className="space-y-1.5 bg-muted/30 p-3 rounded-xl border border-border text-xs">
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Potongan Keterlambatan</span>
-                    <span className="font-semibold text-rose-600">
+                    <span className="text-muted-foreground font-normal">Potongan Keterlambatan</span>
+                    <span className="font-normal text-rose-600 dark:text-rose-400">
                       -{formatRupiah(selectedSlip.summary?.late_deduction_amount ?? selectedSlip.late_deduction_amount)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Iuran BPJS Kesehatan</span>
-                    <span className="font-semibold text-rose-600">
+                    <span className="text-muted-foreground font-normal">Iuran BPJS Kesehatan</span>
+                    <span className="font-normal text-rose-600 dark:text-rose-400">
                       -{formatRupiah(selectedSlip.summary?.bpjs_kesehatan ?? selectedSlip.bpjs_kesehatan)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Iuran BPJS Ketenagakerjaan</span>
-                    <span className="font-semibold text-rose-600">
+                    <span className="text-muted-foreground font-normal">Iuran BPJS Ketenagakerjaan</span>
+                    <span className="font-normal text-rose-600 dark:text-rose-400">
                       -{formatRupiah(selectedSlip.summary?.bpjs_ketenagakerjaan ?? selectedSlip.bpjs_ketenagakerjaan)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Pajak PPh 21</span>
-                    <span className="font-semibold text-rose-600">
+                    <span className="text-muted-foreground font-normal">Pajak PPh 21</span>
+                    <span className="font-normal text-rose-600 dark:text-rose-400">
                       -{formatRupiah(selectedSlip.summary?.tax_pph21 ?? selectedSlip.tax_pph21)}
                     </span>
                   </div>
@@ -225,19 +225,19 @@ export const PayslipViewer: React.FC = () => {
               </div>
 
               {/* Net Total */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-950 text-white flex items-center justify-between shadow-lg">
+              <div className="p-3.5 rounded-xl bg-brand-dark text-white flex items-center justify-between border border-border">
                 <div>
-                  <div className="text-xs text-indigo-300 font-medium">TOTAL GAJI BERSIH (NET)</div>
-                  <div className="text-2xl font-black font-mono">
+                  <div className="text-[10px] text-white/70 font-medium tracking-wider">TOTAL GAJI BERSIH (NET)</div>
+                  <div className="text-lg font-semibold text-secondary">
                     {formatRupiah(getNetSalary(selectedSlip))}
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleDownloadPdf(selectedSlip)}
-                  className="px-4 py-2 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-indigo-50 transition-colors inline-flex items-center space-x-1.5"
+                  className="px-3 py-1.5 rounded-lg bg-card text-foreground font-medium text-xs hover:bg-muted transition-colors inline-flex items-center space-x-1.5 border border-border"
                 >
-                  <Icon icon={Download01Icon} size={15} />
+                  <Icon icon={Download01Icon} size={14} />
                   <span>Unduh PDF</span>
                 </button>
               </div>

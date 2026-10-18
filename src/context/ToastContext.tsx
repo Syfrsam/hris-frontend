@@ -58,13 +58,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const isError = t.type === 'error'
           const isWarning = t.type === 'warning'
 
-          const bgColor = isSuccess
-            ? 'bg-emerald-950/95 border-emerald-500/40 text-emerald-100'
-            : isError
-            ? 'bg-rose-950/95 border-rose-500/40 text-rose-100'
-            : isWarning
-            ? 'bg-amber-950/95 border-amber-500/40 text-amber-100'
-            : 'bg-slate-900/95 border-indigo-500/40 text-slate-100'
+          const bgColor = 'bg-brand-dark/95 border-border text-white'
 
           const icon = isSuccess
             ? CheckmarkCircle01Icon
@@ -75,12 +69,12 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             : InformationCircleIcon
 
           const iconColor = isSuccess
-            ? 'text-emerald-400'
+            ? 'text-primary'
             : isError
-            ? 'text-rose-400'
+            ? 'text-secondary'
             : isWarning
-            ? 'text-amber-400'
-            : 'text-indigo-400'
+            ? 'text-secondary'
+            : 'text-primary'
 
           return (
             <div
@@ -91,7 +85,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 <Icon icon={icon} size={22} className={iconColor} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold tracking-tight">{t.title}</div>
+                <div className="text-sm font-medium tracking-tight">{t.title}</div>
                 {t.message && (
                   <p className="text-xs mt-0.5 opacity-90 leading-relaxed break-words">
                     {t.message}

@@ -1,10 +1,147 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
-@layer base {
-  body {
-    background-color: #f8fafc;
-    color: #0f172a;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url('/Instrument_Sans/static/InstrumentSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url('/Instrument_Sans/static/InstrumentSans-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url('/Instrument_Sans/static/InstrumentSans-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url('/Instrument_Sans/static/InstrumentSans-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url('/Instrument_Sans/static/InstrumentSans-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: 'Instrument Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Instrument Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Specific brand aliases */
+  --color-brand-blue: #1358D0;
+  --color-brand-yellow: #FFF250;
+  --color-brand-dark: #1B1B21;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #1B1B21;
+  --card: #ffffff;
+  --card-foreground: #1B1B21;
+  --popover: #ffffff;
+  --popover-foreground: #1B1B21;
+  --primary: #1358D0;
+  --primary-foreground: #ffffff;
+  --secondary: #FFF250;
+  --secondary-foreground: #1B1B21;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #eff6ff;
+  --accent-foreground: #1358D0;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #1358D0;
+  --radius: 0.875rem;
+}
+
+.dark {
+  --background: #1B1B21;
+  --foreground: #f8fafc;
+  --card: #22222b;
+  --card-foreground: #f8fafc;
+  --popover: #22222b;
+  --popover-foreground: #f8fafc;
+  --primary: #1358D0;
+  --primary-foreground: #ffffff;
+  --secondary: #FFF250;
+  --secondary-foreground: #1B1B21;
+  --muted: #2a2a36;
+  --muted-foreground: #94a3b8;
+  --accent: #2e2e3d;
+  --accent-foreground: #FFF250;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #2f2f3d;
+  --input: #2f2f3d;
+  --ring: #1358D0;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global scrollbar suppression: hidden scrollbars, natural scrolling preserved */
+html,
+body,
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }

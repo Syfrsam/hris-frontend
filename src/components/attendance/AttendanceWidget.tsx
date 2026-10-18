@@ -1,8 +1,7 @@
-﻿import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   AlertCircleIcon,
   CheckmarkCircle01Icon,
-  Clock01Icon,
   CompassIcon,
   Location01Icon,
   Login01Icon,
@@ -10,12 +9,15 @@ import {
   RefreshIcon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
-import { attendanceService } from '../../services/api'
-import type { Attendance } from '../../types'
+import { attendanceService, branchService } from '../../services/api'
+import type { Attendance, Branch } from '../../types'
+import { Card } from '../ui/card'
+import { Badge } from '../ui/badge'
+import { Button } from '../ui/button'
 
-const HQ_LAT = -6.225014
-const HQ_LNG = 106.809657
-const MAX_RADIUS_METERS = 100
+const DEFAULT_LAT = -6.225014
+const DEFAULT_LNG = 106.809657
+const DEFAULT_RADIUS = 100
 
 function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371e3
@@ -42,14 +44,20 @@ export const AttendanceWidget: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<string>('')
   const [currentDate, setCurrentDate] = useState<string>('')
   const [attendance, setAttendance] = useState<Attendance | null>(null)
+  const [activeBranch, setActiveBranch] = useState<Branch | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const [notes, setNotes] = useState<string>('')
   const [actionMessage, setActionMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
 
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [distance, setDistance] = useState<number | null>(null)
   const [geoError, setGeoError] = useState<string | null>(null)
   const [isLocating, setIsLocating] = useState<boolean>(false)
+
+  const officeLat = activeBranch ? Number(activeBranch.latitude) : DEFAULT_LAT
+  const officeLng = activeBranch ? Number(activeBranch.longitude) : DEFAULT_LNG
+  const maxRadius = activeBranch ? Number(activeBranch.radius_meters) : DEFAULT_RADIUS
 
   useEffect(() => {
     const updateTime = () => {
@@ -77,7 +85,7 @@ export const AttendanceWidget: React.FC = () => {
 
   const detectLocation = () => {
     if (!navigator.geolocation) {
-      setGeoError('Browser Anda tidak mendukung deteksi lokasi Geolocation.')
+      setGeoError('Geolocation tidak didukung browser.')
       return
     }
 
@@ -89,44 +97,52 @@ export const AttendanceWidget: React.FC = () => {
         const lat = pos.coords.latitude
         const lng = pos.coords.longitude
         setUserCoords({ lat, lng })
-        const dist = calculateDistanceMeters(lat, lng, HQ_LAT, HQ_LNG)
+        const dist = calculateDistanceMeters(lat, lng, officeLat, officeLng)
         setDistance(dist)
         setIsLocating(false)
       },
       (err) => {
         setIsLocating(false)
-        if (err.code === err.PERMISSION_DENIED) {
-          setGeoError('Izin akses lokasi GPS ditolak. Harap izinkan akses lokasi di browser.')
-        } else {
-          setGeoError('Gagal mendeteksi lokasi GPS: ' + err.message)
-        }
+        setGeoError(err.code === err.PERMISSION_DENIED ? 'Akses GPS ditolak.' : 'Gagal membaca GPS.')
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     )
   }
 
-  const fetchTodayAttendance = async () => {
+  const loadData = async () => {
     setIsLoading(true)
     try {
-      const res = await attendanceService.getToday()
-      if (res.data?.success) {
-        setAttendance(res.data.data)
+      const [todayRes, branchRes] = await Promise.all([
+        attendanceService.getToday().catch(() => null),
+        branchService.getBranches().catch(() => null),
+      ])
+
+      if (todayRes?.data?.success) {
+        setAttendance(todayRes.data.data)
       }
-    } catch {
-      // not clocked-in yet
+      if (branchRes?.data?.success && branchRes.data.data.length > 0) {
+        setActiveBranch(branchRes.data.data[0])
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchTodayAttendance()
+    loadData()
     detectLocation()
   }, [])
 
+  useEffect(() => {
+    if (userCoords) {
+      const dist = calculateDistanceMeters(userCoords.lat, userCoords.lng, officeLat, officeLng)
+      setDistance(dist)
+    }
+  }, [officeLat, officeLng])
+
   const handleClockIn = async () => {
     if (!userCoords) {
-      setActionMessage({ text: 'Lokasi GPS belum terdeteksi. Silakan klik tombol perbarui lokasi.', type: 'error' })
+      setActionMessage({ text: 'GPS belum aktif.', type: 'error' })
       return
     }
 
@@ -139,11 +155,11 @@ export const AttendanceWidget: React.FC = () => {
       })
       if (res.data?.success) {
         setAttendance(res.data.data)
-        setActionMessage({ text: res.data.message || 'Clock-in berhasil!', type: 'success' })
+        setActionMessage({ text: 'Clock-in berhasil!', type: 'success' })
       }
     } catch (err: any) {
       setActionMessage({
-        text: err.response?.data?.message || 'Gagal melakukan clock-in.',
+        text: err.response?.data?.message || 'Gagal clock-in.',
         type: 'error',
       })
     } finally {
@@ -153,7 +169,7 @@ export const AttendanceWidget: React.FC = () => {
 
   const handleClockOut = async () => {
     if (!userCoords) {
-      setActionMessage({ text: 'Lokasi GPS belum terdeteksi.', type: 'error' })
+      setActionMessage({ text: 'GPS belum aktif.', type: 'error' })
       return
     }
 
@@ -166,11 +182,11 @@ export const AttendanceWidget: React.FC = () => {
       })
       if (res.data?.success) {
         setAttendance(res.data.data)
-        setActionMessage({ text: res.data.message || 'Clock-out berhasil!', type: 'success' })
+        setActionMessage({ text: 'Clock-out berhasil!', type: 'success' })
       }
     } catch (err: any) {
       setActionMessage({
-        text: err.response?.data?.message || 'Gagal melakukan clock-out.',
+        text: err.response?.data?.message || 'Gagal clock-out.',
         type: 'error',
       })
     } finally {
@@ -179,13 +195,16 @@ export const AttendanceWidget: React.FC = () => {
   }
 
   const simulateHqLocation = () => {
-    setUserCoords({ lat: HQ_LAT, lng: HQ_LNG })
+    setUserCoords({ lat: officeLat, lng: officeLng })
     setDistance(0)
     setGeoError(null)
-    setActionMessage({ text: 'Lokasi disimulasikan tepat di Kantor Pusat (HQ Jakarta).', type: 'success' })
+    setActionMessage({
+      text: `Lokasi disimulasikan di ${activeBranch?.name || 'Kantor Pusat'}.`,
+      type: 'success',
+    })
   }
 
-  const isWithinRadius = distance !== null && distance <= MAX_RADIUS_METERS
+  const isWithinRadius = distance !== null && distance <= maxRadius
 
   const clockInDisplay = getClockTimeString(attendance?.clock_in)
   const clockOutDisplay = getClockTimeString(attendance?.clock_out)
@@ -193,199 +212,167 @@ export const AttendanceWidget: React.FC = () => {
   const hasClockedOut = Boolean(clockOutDisplay)
 
   return (
-    <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-xl relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/60 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-
+    <Card className="rounded-2xl p-5 lg:p-6 mb-6">
       {/* Header Info */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border gap-3">
         <div>
-          <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold tracking-wide">
-            <Icon icon={Clock01Icon} size={15} />
-            <span>Presensi Harian & Geofencing GPS</span>
-          </span>
-          <h2 className="text-2xl font-bold text-slate-900 mt-2">Pencatatan Kehadiran Karyawan</h2>
-          <p className="text-sm text-slate-500">{currentDate}</p>
+          <h2 className="text-lg font-semibold text-foreground tracking-tight">Presensi Karyawan</h2>
+          <p className="text-xs text-muted-foreground mt-0.5 font-normal">{currentDate}</p>
         </div>
 
         {/* Live Digital Clock */}
-        <div className="bg-slate-900 text-white px-5 py-3 rounded-2xl flex items-center space-x-3 shadow-md">
-          <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
+        <div className="bg-brand-dark text-white px-3.5 py-1.5 rounded-xl flex items-center space-x-3 shadow-xs border border-brand-dark/20 w-fit">
+          <div className="w-2 h-2 rounded-sm bg-emerald-400 animate-pulse" />
+          <div className="text-right">
+            <div className="text-[9px] text-white/60 tracking-wider leading-none font-normal">WAKTU SISTEM</div>
+            <div className="text-base font-semibold tracking-wider leading-tight mt-0.5">{currentTime || '08:00:00'}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Geolocation Status Bar */}
+      <div className="my-4 p-3 rounded-xl bg-muted/50 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center space-x-3">
+          <div className={`p-2 rounded-lg border ${
+            isWithinRadius
+              ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
+              : 'bg-rose-500/10 text-rose-600 border-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30'
+          }`}>
+            <Icon icon={Location01Icon} size={18} />
+          </div>
           <div>
-            <div className="text-xs text-slate-400 font-mono">WAKTU SERVER (WIB)</div>
-            <div className="text-2xl font-black font-mono tracking-wider">{currentTime || '08:00:00'}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Geolocation Status Card */}
-      <div className="my-6 p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-start space-x-3">
-            <div className={`p-2.5 rounded-xl ${isWithinRadius ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-              <Icon icon={Location01Icon} size={20} />
+            <div className="flex items-center space-x-2">
+              <span className="font-medium text-xs text-foreground">
+                {activeBranch?.name || 'Jakarta Head Office'}
+              </span>
+              {distance !== null && (
+                <Badge variant={isWithinRadius ? 'success' : 'destructive'} className="text-[10px] px-2 py-0.5">
+                  {isWithinRadius ? 'Dalam Radius' : `Di Luar Radius (Maks. ${maxRadius}m)`}
+                </Badge>
+              )}
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold text-sm text-slate-900">
-                  Kantor Cabang: Jakarta Head Office (JKT-HQ)
-                </span>
-                {distance !== null && (
-                  <span
-                    className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                      isWithinRadius
-                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                        : 'bg-rose-100 text-rose-800 border border-rose-300'
-                    }`}
-                  >
-                    {isWithinRadius ? '✓ Dalam Radius' : '✕ Di Luar Radius'}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {distance !== null
-                  ? `Jarak Anda saat ini: ${distance} meter dari titik kantor (Batas maksimal: 100 meter)`
-                  : isLocating
-                  ? 'Sedang mendeteksi sinyal GPS presisi...'
-                  : 'Menunggu pembacaan GPS...'}
-              </p>
+            <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">
+              {distance !== null ? `Jarak: ${distance} m` : isLocating ? 'Mencari sinyal GPS...' : 'GPS belum terbaca'}
             </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={detectLocation}
-              disabled={isLocating}
-              className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-100 flex items-center space-x-1.5 transition-all disabled:opacity-50"
-            >
-              <Icon icon={RefreshIcon} size={14} className={isLocating ? 'animate-spin' : ''} />
-              <span>{isLocating ? 'Mencari...' : 'Cek GPS'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={simulateHqLocation}
-              className="px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl hover:bg-indigo-100 flex items-center space-x-1.5 transition-all"
-              title="Gunakan titik koordinat kantor agar tombol Clock-in aktif"
-            >
-              <Icon icon={CompassIcon} size={15} />
-              <span>Simulasi di Kantor (0m)</span>
-            </button>
           </div>
         </div>
 
-        {geoError && (
-          <div className="mt-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center space-x-2">
-            <Icon icon={AlertCircleIcon} size={16} className="flex-shrink-0" />
-            <span>{geoError} — Kamu bisa klik tombol &quot;Simulasi di Kantor&quot; untuk langsung menguji presensi.</span>
-          </div>
-        )}
+        <div className="flex items-center space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={detectLocation}
+            disabled={isLocating}
+            className="rounded-lg text-xs h-8 font-normal"
+          >
+            <Icon icon={RefreshIcon} size={13} className={isLocating ? 'animate-spin' : ''} />
+            <span>{isLocating ? 'Cek...' : 'Cek GPS'}</span>
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={simulateHqLocation}
+            className="rounded-lg text-xs h-8 font-medium"
+          >
+            <Icon icon={CompassIcon} size={13} />
+            <span>Simulasi (0m)</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Action Message Alert */}
-      {actionMessage && (
-        <div
-          className={`mb-6 p-4 rounded-2xl text-sm flex items-start space-x-2 border ${
-            actionMessage.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-              : 'bg-rose-50 text-rose-800 border-rose-200'
-          }`}
-        >
-          {actionMessage.type === 'success' ? (
-            <Icon icon={CheckmarkCircle01Icon} size={18} className="flex-shrink-0 text-emerald-600 mt-0.5" />
-          ) : (
-            <Icon icon={AlertCircleIcon} size={18} className="flex-shrink-0 text-rose-600 mt-0.5" />
-          )}
-          <span className="font-medium">{actionMessage.text}</span>
+      {geoError && (
+        <div className="mb-4 p-2.5 rounded-lg bg-secondary/20 border border-secondary/40 text-foreground text-xs flex items-center space-x-2 font-normal">
+          <Icon icon={AlertCircleIcon} size={14} className="shrink-0 text-foreground" />
+          <span>{geoError} Gunakan &quot;Simulasi (0m)&quot; untuk uji absensi.</span>
         </div>
       )}
 
-      {/* Shift & Tolerance Guidelines */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100">
-          <div className="text-xs font-semibold text-indigo-600 uppercase">Jadwal Shift</div>
-          <div className="text-lg font-bold text-slate-900 mt-1">08:30 - 17:30 WIB</div>
-          <div className="text-xs text-slate-500 mt-0.5">Shift Reguler Senin - Jumat</div>
+      {actionMessage && (
+        <div
+          className={`mb-4 p-3 rounded-lg text-xs flex items-center space-x-2 border ${
+            actionMessage.type === 'success'
+              ? 'bg-primary/10 text-primary border-primary/20'
+              : 'bg-muted text-foreground border-border'
+          }`}
+        >
+          {actionMessage.type === 'success' ? (
+            <Icon icon={CheckmarkCircle01Icon} size={16} className="shrink-0 text-primary" />
+          ) : (
+            <Icon icon={AlertCircleIcon} size={16} className="shrink-0 text-muted-foreground" />
+          )}
+          <span className="font-normal">{actionMessage.text}</span>
+        </div>
+      )}
+
+      {/* 3 Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/15">
+          <div className="text-[11px] font-medium text-primary uppercase tracking-wide">Jadwal Shift</div>
+          <div className="text-sm font-semibold text-foreground mt-1">08:30 - 17:30 WIB</div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100">
-          <div className="text-xs font-semibold text-amber-600 uppercase">Toleransi Keterlambatan</div>
-          <div className="text-lg font-bold text-slate-900 mt-1">15 Menit (s/d 08:45)</div>
-          <div className="text-xs text-slate-500 mt-0.5">Lewat 08:45 otomatis berstatus Late</div>
+        <div className="p-3.5 rounded-xl bg-secondary/25 border border-secondary/40">
+          <div className="text-[11px] font-medium text-foreground/80 uppercase tracking-wide">Toleransi</div>
+          <div className="text-sm font-semibold text-foreground mt-1">15 Menit (s/d 08:45)</div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-          <div className="text-xs font-semibold text-slate-600 uppercase">Status Hari Ini</div>
-          <div className="text-lg font-bold text-slate-900 mt-1">
+        <div className="p-3.5 rounded-xl bg-muted/60 border border-border">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Status Hari Ini</div>
+          <div className="mt-1">
             {hasClockedIn ? (
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                attendance?.status === 'late'
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-emerald-100 text-emerald-800'
-              }`}>
+              <Badge variant={attendance?.status === 'late' ? 'warning' : 'success'} className="text-xs">
                 {attendance?.status === 'late'
-                  ? `Terlambat (${attendance.late_minutes} menit)`
+                  ? `Terlambat (${attendance.late_minutes}m)`
                   : 'Tepat Waktu'}
-              </span>
+              </Badge>
             ) : (
-              <span className="text-xs font-semibold text-slate-500">Belum Melakukan Clock-in</span>
+              <span className="text-xs font-normal text-muted-foreground">Belum Hadir</span>
             )}
           </div>
-          <div className="text-xs text-slate-500 mt-0.5">
-            {hasClockedOut ? 'Sudah Clock-out' : hasClockedIn ? 'Sedang Bekerja' : 'Menunggu Kehadiran'}
-          </div>
         </div>
       </div>
 
-      {/* Main Clock-In / Clock-Out Action Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button
-          type="button"
-          onClick={handleClockIn}
-          disabled={hasClockedIn || !isWithinRadius || isSubmitting || isLoading}
-          className={`p-6 rounded-2xl flex flex-col items-center justify-center space-y-2 font-bold transition-all shadow-lg ${
-            hasClockedIn
-              ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
-              : !isWithinRadius
-              ? 'bg-slate-200 text-slate-500 border border-slate-300 cursor-not-allowed shadow-none'
-              : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/25 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0'
-          }`}
-        >
-          <Icon icon={Login01Icon} size={28} />
-          <span className="text-lg">
-            {hasClockedIn ? `Masuk: ${clockInDisplay}` : 'Presensi Masuk (Clock-In)'}
-          </span>
-          <span className="text-xs font-normal opacity-90">
-            {hasClockedIn
-              ? 'Clock-in hari ini telah tercatat'
-              : !isWithinRadius
-              ? 'Harus berada dalam radius 100m'
-              : 'Klik untuk merekam kehadiran'}
-          </span>
-        </button>
+      {/* Clock-In Bar: Timer + Note + Action */}
+      <div className="p-3 rounded-xl border border-border bg-card flex flex-col sm:flex-row items-center gap-2.5">
+        <div className="px-3 py-1.5 bg-muted rounded-lg text-xs font-medium text-foreground tracking-wide shrink-0">
+          {currentTime || '08:30:00'}
+        </div>
+        <input
+          type="text"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Catatan masuk (opsional)..."
+          className="flex-1 w-full bg-transparent border-0 px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none font-normal"
+        />
+        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+          <Button
+            type="button"
+            onClick={handleClockIn}
+            disabled={hasClockedIn || !isWithinRadius || isSubmitting || isLoading}
+            className="w-full sm:w-auto h-9 px-4 rounded-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-primary/20 text-xs"
+          >
+            <Icon icon={Login01Icon} size={15} />
+            <span>
+              {hasClockedIn ? `Masuk: ${clockInDisplay}` : 'Clock-In'}
+            </span>
+          </Button>
 
-        <button
-          type="button"
-          onClick={handleClockOut}
-          disabled={!hasClockedIn || hasClockedOut || isSubmitting}
-          className={`p-6 rounded-2xl flex flex-col items-center justify-center space-y-2 font-bold transition-all shadow-lg ${
-            !hasClockedIn || hasClockedOut
-              ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
-              : 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-indigo-500/25 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0'
-          }`}
-        >
-          <Icon icon={Logout01Icon} size={28} />
-          <span className="text-lg">
-            {hasClockedOut ? `Pulang: ${clockOutDisplay}` : 'Presensi Pulang (Clock-Out)'}
-          </span>
-          <span className="text-xs font-normal opacity-90">
-            {hasClockedOut
-              ? 'Jam kerja hari ini selesai'
-              : !hasClockedIn
-              ? 'Lakukan clock-in terlebih dahulu'
-              : 'Klik untuk mengakhiri shift'}
-          </span>
-        </button>
+          {hasClockedIn && !hasClockedOut && (
+            <Button
+              type="button"
+              variant="brandDark"
+              onClick={handleClockOut}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto h-9 px-4 rounded-lg font-semibold shadow-xs text-xs"
+            >
+              <Icon icon={Logout01Icon} size={15} />
+              <span>Clock-Out</span>
+            </Button>
+          )}
+        </div>
       </div>
-    </div>
+    </Card>
   )
 }

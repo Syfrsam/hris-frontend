@@ -30,6 +30,9 @@ export interface Branch {
   latitude: number
   longitude: number
   radius_meters: number
+  timezone?: string
+  is_active?: boolean
+  employees_count?: number
 }
 
 export interface Employee {

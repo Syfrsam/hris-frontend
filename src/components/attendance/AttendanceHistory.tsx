@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Calendar03Icon,
   CheckmarkCircle01Icon,
@@ -7,6 +7,7 @@ import {
 import { Icon } from '../common/Icon'
 import { attendanceService } from '../../services/api'
 import type { Attendance } from '../../types'
+import { Badge } from '../ui/badge'
 
 interface SummaryData {
   total_present?: number
@@ -65,50 +66,48 @@ export const AttendanceHistory: React.FC = () => {
     : (totalMinutes / 60).toFixed(1)
 
   return (
-    <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-xl mt-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+    <div className="bg-card rounded-2xl p-5 lg:p-6 border border-border shadow-xs mt-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border gap-3">
         <div>
-          <h3 className="text-xl font-bold text-slate-900">Riwayat Presensi Bulanan</h3>
-          <p className="text-xs text-slate-500 mt-1">
-            Rekap kehadiran, waktu clock-in & clock-out, serta kalkulasi keterlambatan
-          </p>
+          <h3 className="text-base font-semibold text-foreground">Riwayat Presensi</h3>
+          <p className="text-xs text-muted-foreground mt-0.5 font-normal">Rekapitulasi kehadiran bulanan</p>
         </div>
 
         <div className="flex items-center space-x-2">
-          <Icon icon={Calendar03Icon} size={18} className="text-slate-400" />
+          <Icon icon={Calendar03Icon} size={16} className="text-muted-foreground" />
           <input
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-3 py-1.5 rounded-lg border border-border text-xs font-normal text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
       </div>
 
       {/* Recap Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6">
-        <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex items-center justify-between">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
+        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
           <div>
-            <div className="text-xs font-semibold text-emerald-700 uppercase">Total Hadir</div>
-            <div className="text-2xl font-black text-emerald-900 mt-1">{totalPresent} Hari</div>
+            <div className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Total Hadir</div>
+            <div className="text-lg font-semibold text-foreground mt-0.5">{totalPresent} Hari</div>
           </div>
-          <Icon icon={CheckmarkCircle01Icon} size={32} className="text-emerald-500 opacity-80" />
+          <Icon icon={CheckmarkCircle01Icon} size={24} className="text-emerald-500 opacity-90" />
         </div>
 
-        <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-100 flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-between">
           <div>
-            <div className="text-xs font-semibold text-amber-700 uppercase">Keterlambatan</div>
-            <div className="text-2xl font-black text-amber-900 mt-1">{totalLate} Kali</div>
+            <div className="text-[11px] font-medium text-rose-600 dark:text-rose-400 uppercase tracking-wide">Keterlambatan</div>
+            <div className="text-lg font-semibold text-foreground mt-0.5">{totalLate} Kali</div>
           </div>
-          <Icon icon={Clock01Icon} size={32} className="text-amber-500 opacity-80" />
+          <Icon icon={Clock01Icon} size={24} className="text-rose-500 opacity-90" />
         </div>
 
-        <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-muted/40 border border-border flex items-center justify-between">
           <div>
-            <div className="text-xs font-semibold text-indigo-700 uppercase">Jam Kerja Efektif</div>
-            <div className="text-2xl font-black text-indigo-900 mt-1">{totalHours} Jam</div>
+            <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Jam Kerja Efektif</div>
+            <div className="text-lg font-semibold text-foreground mt-0.5">{totalHours} Jam</div>
           </div>
-          <Icon icon={Clock01Icon} size={32} className="text-indigo-500 opacity-80" />
+          <Icon icon={Clock01Icon} size={24} className="text-muted-foreground opacity-80" />
         </div>
       </div>
 
@@ -116,59 +115,60 @@ export const AttendanceHistory: React.FC = () => {
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
-              <th className="pb-3 px-3">Tanggal</th>
-              <th className="pb-3 px-3">Clock-In</th>
-              <th className="pb-3 px-3">Clock-Out</th>
-              <th className="pb-3 px-3">Status</th>
-              <th className="pb-3 px-3">Keterlambatan</th>
-              <th className="pb-3 px-3 text-right">Durasi Kerja</th>
+            <tr className="border-b border-border text-[11px] font-medium uppercase text-muted-foreground/80">
+              <th className="pb-2.5 px-3">Tanggal</th>
+              <th className="pb-2.5 px-3">Clock-In</th>
+              <th className="pb-2.5 px-3">Clock-Out</th>
+              <th className="pb-2.5 px-3">Status</th>
+              <th className="pb-2.5 px-3">Keterlambatan</th>
+              <th className="pb-2.5 px-3 text-right">Durasi Kerja</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-border">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-slate-400">
-                  Memuat data riwayat...
+                <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground font-normal">
+                  Memuat data...
                 </td>
               </tr>
             ) : safeList.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-slate-400">
-                  Belum ada catatan presensi pada bulan ini.
+                <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground font-normal">
+                  Tidak ada catatan presensi pada periode ini.
                 </td>
               </tr>
             ) : (
               safeList.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-3 px-3 font-medium text-slate-900">{item.date}</td>
-                  <td className="py-3 px-3 font-mono text-xs">{formatClockTime(item.clock_in)}</td>
-                  <td className="py-3 px-3 font-mono text-xs">{formatClockTime(item.clock_out)}</td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                <tr key={item.id} className="hover:bg-muted/40 transition-colors">
+                  <td className="py-2.5 px-3 font-normal text-xs text-foreground">{item.date}</td>
+                  <td className="py-2.5 px-3 text-xs font-normal text-foreground">{formatClockTime(item.clock_in)}</td>
+                  <td className="py-2.5 px-3 text-xs font-normal text-foreground">{formatClockTime(item.clock_out)}</td>
+                  <td className="py-2.5 px-3">
+                    <Badge
+                      variant={
                         item.status === 'present'
-                          ? 'bg-emerald-100 text-emerald-800'
+                          ? 'success'
                           : item.status === 'late'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-rose-100 text-rose-800'
-                      }`}
+                          ? 'warning'
+                          : 'destructive'
+                      }
+                      className="text-[10px] px-2 py-0.5 font-medium"
                     >
                       {item.status === 'present'
                         ? 'Tepat Waktu'
                         : item.status === 'late'
                         ? 'Terlambat'
                         : 'Alpa'}
-                    </span>
+                    </Badge>
                   </td>
-                  <td className="py-3 px-3 text-xs">
+                  <td className="py-2.5 px-3 text-xs">
                     {item.late_minutes > 0 ? (
-                      <span className="text-amber-700 font-semibold">{item.late_minutes} menit</span>
+                      <span className="text-rose-600 dark:text-rose-400 font-medium">{item.late_minutes}m</span>
                     ) : (
-                      <span className="text-slate-400">-</span>
+                      <span className="text-muted-foreground font-normal">-</span>
                     )}
                   </td>
-                  <td className="py-3 px-3 text-right font-mono text-xs font-semibold">
+                  <td className="py-2.5 px-3 text-right text-xs font-normal text-foreground">
                     {item.work_duration_minutes > 0
                       ? `${(item.work_duration_minutes / 60).toFixed(1)} jam`
                       : '-'}

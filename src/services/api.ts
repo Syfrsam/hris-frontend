@@ -1,4 +1,5 @@
-﻿import axios from 'axios'
+import axios from 'axios'
+import type { Branch } from '../types'
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 
@@ -36,6 +37,14 @@ export const authService = {
     api.post('/auth/login', credentials),
   getMe: () => api.get('/auth/me'),
   logout: () => api.post('/auth/logout'),
+}
+
+export const branchService = {
+  getBranches: () => api.get('/branches'),
+  getBranch: (id: number) => api.get(`/branches/${id}`),
+  createBranch: (data: Partial<Branch>) => api.post('/branches', data),
+  updateBranch: (id: number, data: Partial<Branch>) => api.put(`/branches/${id}`, data),
+  deleteBranch: (id: number) => api.delete(`/branches/${id}`),
 }
 
 export const attendanceService = {
@@ -99,4 +108,4 @@ export const payrollService = {
     api.get(`/payrolls/${id}/download`, { responseType: 'blob' }),
 }
 
-export default api;
+export default api

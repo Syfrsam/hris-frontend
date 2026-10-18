@@ -38,12 +38,19 @@ export const PayrollManagement: React.FC = () => {
       const res = await api.get('/payrolls/periods')
       const data: PayrollPeriod[] = res.data?.data || []
       setPeriods(data)
-      if (data.length > 0 && !selectedPeriodId) {
-        setSelectedPeriodId(data[0].id)
+      if (data.length > 0) {
+        if (!selectedPeriodId) {
+          setSelectedPeriodId(data[0].id)
+        }
+      } else {
+        setSelectedPeriodId(null)
+        setPayrolls([])
+        setLoading(false)
       }
     } catch (err) {
       console.error('Error loading payroll periods:', err)
       toast.error('Gagal Memuat Periode', 'Tidak dapat mengambil daftar periode payroll.')
+      setLoading(false)
     }
   }
 
@@ -190,55 +197,59 @@ export const PayrollManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+    <div className="space-y-5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-card p-5 rounded-2xl border border-border shadow-xs">
         <div>
-          <div className="flex items-center space-x-2 text-indigo-600 font-bold text-xs uppercase tracking-wider mb-1">
-            <Icon icon={DollarCircleIcon} size={16} />
+          <div className="flex items-center space-x-1.5 text-primary font-normal text-xs uppercase tracking-wider mb-1">
+            <Icon icon={DollarCircleIcon} size={15} />
             <span>Engine Penggajian & Rekapitulasi</span>
           </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-lg font-semibold text-foreground tracking-tight">
             Manajemen Payroll Bulanan
           </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Otomasi kalkulasi gaji bersih dengan formula Depnaker, potongan BPJS Ketenagakerjaan & Kesehatan, PPh 21, dan pengesahan digital.
+          <p className="text-xs text-muted-foreground mt-0.5 font-normal">
+            Kalkulasi gaji bersih, potongan BPJS, PPh 21, dan pengesahan digital.
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           <button
             type="button"
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition-colors"
+            className="px-3.5 py-2 bg-muted hover:bg-muted/80 text-foreground font-medium rounded-lg text-xs transition-colors border border-border"
           >
             + Buat Periode Baru
           </button>
         </div>
       </div>
 
-      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Periode Aktif:
+      <div className="bg-card p-4 rounded-xl border border-border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Periode:
           </span>
           <select
             value={selectedPeriodId || ''}
             onChange={(e) => setSelectedPeriodId(Number(e.target.value))}
-            className="bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl px-4 py-2 focus:outline-none focus:border-indigo-500"
+            className="bg-muted border border-border text-foreground text-xs font-normal rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            {periods.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.cutoff_date} Cut-off)
-              </option>
-            ))}
+            {periods.length === 0 ? (
+              <option value="">Belum ada periode</option>
+            ) : (
+              periods.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.cutoff_date?.slice(0, 10)} Cut-off)
+                </option>
+              ))
+            )}
           </select>
 
           {selectedPeriod && (
             <span
-              className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-medium capitalize border ${
                 selectedPeriod.status === 'authorized'
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-amber-100 text-amber-800'
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
+                  : 'bg-secondary text-secondary-foreground border-secondary/40'
               }`}
             >
               Status: {selectedPeriod.status}
@@ -246,14 +257,14 @@ export const PayrollManagement: React.FC = () => {
           )}
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           <button
             type="button"
             disabled={generating}
             onClick={handleGenerateDraft}
-            className="inline-flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-xs shadow-md shadow-indigo-600/20 transition-all disabled:opacity-50"
+            className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg text-xs shadow-xs transition-colors disabled:opacity-50"
           >
-            <Icon icon={Invoice01Icon} size={16} />
+            <Icon icon={Invoice01Icon} size={15} />
             <span>{generating ? 'Mengkalkulasi...' : '1-Click Generate Draf'}</span>
           </button>
 
@@ -262,99 +273,107 @@ export const PayrollManagement: React.FC = () => {
               type="button"
               disabled={authorizing || payrolls.length === 0}
               onClick={handleAuthorizePeriod}
-              className="inline-flex items-center space-x-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50"
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium rounded-lg text-xs shadow-xs transition-colors disabled:opacity-50 border border-secondary/40"
             >
-              <Icon icon={CheckmarkCircle01Icon} size={16} />
+              <Icon icon={CheckmarkCircle01Icon} size={15} />
               <span>{authorizing ? 'Mengesahkan...' : 'Otorisasi & Publikasikan'}</span>
             </button>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-card p-4 rounded-xl border border-border shadow-xs">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
             Karyawan Terproses
           </div>
-          <div className="text-3xl font-black text-slate-900 mt-2">
+          <div className="text-xl font-semibold text-foreground mt-1">
             {summary.count}
           </div>
-          <div className="text-xs text-slate-500 mt-1">Slip gaji terhitung</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Slip gaji terhitung</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-indigo-100 shadow-sm">
-          <div className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+        <div className="bg-card p-4 rounded-xl border border-border shadow-xs">
+          <div className="text-[11px] font-medium text-primary uppercase tracking-wider">
             Total Gaji Pokok
           </div>
-          <div className="text-xl font-black text-slate-900 mt-2 font-mono">
+          <div className="text-base font-semibold text-foreground mt-1">
             {formatRupiah(summary.basicTotal)}
           </div>
-          <div className="text-xs text-indigo-700/80 mt-1">Basis kontrak aktif</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Basis kontrak aktif</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm">
-          <div className="text-xs font-bold text-rose-600 uppercase tracking-wider">
+        <div className="bg-card p-4 rounded-xl border border-border shadow-xs">
+          <div className="text-[11px] font-medium text-rose-600 dark:text-rose-400 uppercase tracking-wider">
             Total Potongan
           </div>
-          <div className="text-xl font-black text-rose-600 mt-2 font-mono">
+          <div className="text-base font-semibold text-rose-600 dark:text-rose-400 mt-1">
             {formatRupiah(summary.deductionsTotal)}
           </div>
-          <div className="text-xs text-rose-500 mt-1">BPJS, PPh 21 & Keterlambatan</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">BPJS, PPh 21 & Telat</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-emerald-100 shadow-sm">
-          <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider">
+        <div className="bg-card p-4 rounded-xl border border-primary/20 bg-primary/5 shadow-xs">
+          <div className="text-[11px] font-medium text-primary uppercase tracking-wider">
             Total Pengeluaran Net
           </div>
-          <div className="text-xl font-black text-emerald-600 mt-2 font-mono">
+          <div className="text-base font-semibold text-primary mt-1">
             {formatRupiah(summary.netTotal)}
           </div>
-          <div className="text-xs text-emerald-700 mt-1">Siap ditransfer ke bank</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Siap ditransfer</div>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-sm font-black text-slate-900 tracking-tight">
+      <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <h3 className="text-xs font-semibold text-foreground tracking-tight">
             Rincian Kalkulasi Slip Gaji Karyawan
           </h3>
-          <span className="text-xs font-bold text-slate-400 font-mono">
+          <span className="text-xs font-medium text-muted-foreground">
             {payrolls.length} Karyawan
           </span>
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center space-y-3">
-            <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs font-semibold">Memuat data rekapitulasi gaji...</span>
+          <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-2 font-normal">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-xs">Memuat data rekapitulasi gaji...</span>
+          </div>
+        ) : periods.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-1.5 font-normal">
+            <Icon icon={Invoice01Icon} size={22} className="text-muted-foreground" />
+            <span className="text-sm font-normal text-foreground">
+              Belum Ada Periode Payroll
+            </span>
+            <span className="text-xs text-muted-foreground max-w-sm">
+              Klik &ldquo;+ Buat Periode Baru&rdquo; di kanan atas untuk membuat periode penggajian baru.
+            </span>
           </div>
         ) : payrolls.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-1 border border-amber-100">
-              <Icon icon={AlertCircleIcon} size={24} />
-            </div>
-            <span className="text-sm font-bold text-slate-800">
+          <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-1.5 font-normal">
+            <Icon icon={AlertCircleIcon} size={22} className="text-muted-foreground" />
+            <span className="text-sm font-normal text-foreground">
               Belum Ada Kalkulasi untuk Periode Ini
             </span>
-            <span className="text-xs text-slate-400 max-w-sm">
-              Klik tombol &ldquo;1-Click Generate Draf&rdquo; di atas untuk mengeksekusi kalkulasi otomatis seluruh karyawan.
+            <span className="text-xs text-muted-foreground max-w-sm">
+              Klik &ldquo;1-Click Generate Draf&rdquo; di atas untuk mengeksekusi kalkulasi otomatis seluruh karyawan.
             </span>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50/75 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+            <table className="w-full text-left text-sm text-foreground">
+              <thead className="bg-muted/40 text-[11px] font-normal text-muted-foreground/80 uppercase tracking-wider border-b border-border">
                 <tr>
-                  <th className="py-3.5 px-6">Karyawan</th>
-                  <th className="py-3.5 px-6">No Slip Gaji</th>
-                  <th className="py-3.5 px-6">Gaji Pokok</th>
-                  <th className="py-3.5 px-6">Upah Lembur</th>
-                  <th className="py-3.5 px-6">Potongan</th>
-                  <th className="py-3.5 px-6">Gaji Bersih (Net)</th>
-                  <th className="py-3.5 px-6 text-right">PDF</th>
+                  <th className="py-2.5 px-4">Karyawan</th>
+                  <th className="py-2.5 px-4">No Slip Gaji</th>
+                  <th className="py-2.5 px-4">Gaji Pokok</th>
+                  <th className="py-2.5 px-4">Upah Lembur</th>
+                  <th className="py-2.5 px-4">Potongan</th>
+                  <th className="py-2.5 px-4">Gaji Bersih (Net)</th>
+                  <th className="py-2.5 px-4 text-right">PDF</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-border">
                 {payrolls.map((p) => {
                   const basic = p.summary?.basic_salary ?? p.basic_salary ?? 0
                   const ot = p.summary?.total_overtime_pay ?? p.total_overtime_pay ?? 0
@@ -362,37 +381,37 @@ export const PayrollManagement: React.FC = () => {
                   const net = p.summary?.net_salary ?? p.net_salary ?? 0
 
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-slate-900">
+                    <tr key={p.id} className="hover:bg-muted/40 transition-colors">
+                      <td className="py-2.5 px-4">
+                        <div className="font-normal text-foreground text-xs">
                           {(p.employee as any)?.name || p.employee?.user?.name || 'Karyawan'}
                         </div>
-                        <div className="text-xs text-slate-400 font-mono">
+                        <div className="text-[10px] text-muted-foreground font-normal">
                           NIK: {(p.employee as any)?.nik || p.employee?.nik || '-'} • {typeof (p.employee as any)?.department === 'string' ? (p.employee as any).department : p.employee?.department?.name || 'Divisi'}
                         </div>
                       </td>
-                      <td className="py-4 px-6 font-mono text-xs font-semibold text-indigo-700">
+                      <td className="py-2.5 px-4 text-xs font-normal text-primary">
                         {p.payslip_number}
                       </td>
-                      <td className="py-4 px-6 font-mono text-xs font-semibold text-slate-800">
+                      <td className="py-2.5 px-4 text-xs font-normal text-muted-foreground">
                         {formatRupiah(basic)}
                       </td>
-                      <td className="py-4 px-6 font-mono text-xs font-semibold text-emerald-600">
-                        {formatRupiah(ot)}
+                      <td className="py-2.5 px-4 text-xs font-normal text-emerald-600 dark:text-emerald-400">
+                        +{formatRupiah(ot)}
                       </td>
-                      <td className="py-4 px-6 font-mono text-xs font-semibold text-rose-600">
+                      <td className="py-2.5 px-4 text-xs font-normal text-rose-600 dark:text-rose-400">
                         -{formatRupiah(ded)}
                       </td>
-                      <td className="py-4 px-6 font-mono text-xs font-black text-slate-900">
+                      <td className="py-2.5 px-4 text-xs font-semibold text-foreground">
                         {formatRupiah(net)}
                       </td>
-                      <td className="py-4 px-6 text-right">
+                      <td className="py-2.5 px-4 text-right">
                         <button
                           type="button"
                           onClick={() => handleDownloadPdf(p.id, p.payslip_number)}
-                          className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-bold text-xs transition-colors"
+                          className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors border border-border"
                         >
-                          <Icon icon={Download01Icon} size={14} />
+                          <Icon icon={Download01Icon} size={13} />
                           <span>PDF</span>
                         </button>
                       </td>
@@ -406,29 +425,29 @@ export const PayrollManagement: React.FC = () => {
       </div>
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-card rounded-2xl max-w-lg w-full p-6 shadow-xl border border-border space-y-5">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
-                <h3 className="text-xl font-black text-slate-900">
+                <h3 className="text-base font-medium text-foreground">
                   Buka Periode Payroll Baru
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5 font-normal">
                   Atur rentang tanggal cut-off absensi (tgl 25) dan tanggal pembayaran gaji.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="text-slate-400 hover:text-slate-700 p-1"
+                className="text-muted-foreground hover:text-foreground p-1"
               >
-                <Icon icon={Cancel01Icon} size={20} />
+                <Icon icon={Cancel01Icon} size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreatePeriod} className="space-y-4 text-xs">
+            <form onSubmit={handleCreatePeriod} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <label className="block font-normal text-foreground mb-1 uppercase tracking-wider text-[11px]">
                   Nama Periode *
                 </label>
                 <input
@@ -436,13 +455,13 @@ export const PayrollManagement: React.FC = () => {
                   required
                   value={periodForm.name}
                   onChange={(e) => setPeriodForm({ ...periodForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-indigo-500 font-semibold"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-normal text-xs"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-medium text-foreground mb-1 uppercase tracking-wider text-[11px]">
                     Tanggal Mulai *
                   </label>
                   <input
@@ -450,12 +469,12 @@ export const PayrollManagement: React.FC = () => {
                     required
                     value={periodForm.start_date}
                     onChange={(e) => setPeriodForm({ ...periodForm, start_date: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-normal text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-medium text-foreground mb-1 uppercase tracking-wider text-[11px]">
                     Tanggal Cut-off *
                   </label>
                   <input
@@ -463,13 +482,13 @@ export const PayrollManagement: React.FC = () => {
                     required
                     value={periodForm.cutoff_date}
                     onChange={(e) => setPeriodForm({ ...periodForm, cutoff_date: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-normal text-xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <label className="block font-medium text-foreground mb-1 uppercase tracking-wider text-[11px]">
                   Tanggal Pembayaran Gaji *
                 </label>
                 <input
@@ -477,21 +496,21 @@ export const PayrollManagement: React.FC = () => {
                   required
                   value={periodForm.payment_date}
                   onChange={(e) => setPeriodForm({ ...periodForm, payment_date: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-normal text-xs"
                 />
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs"
+                  className="px-3.5 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20"
+                  className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs shadow-xs transition-colors"
                 >
                   Simpan Periode
                 </button>

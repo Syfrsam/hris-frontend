@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   AlertCircleIcon,
   Cancel01Icon,
@@ -116,13 +116,13 @@ export const LeaveManagement: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-xl">
+    <div className="bg-card rounded-2xl p-5 lg:p-6 border border-border shadow-xs">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Manajemen Cuti & Izin Sakit</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Pengajuan permohonan waktu istirahat kerja dengan alur persetujuan berjenjang
+          <h2 className="text-lg font-semibold text-foreground tracking-tight">Manajemen Cuti & Izin Sakit</h2>
+          <p className="text-xs text-muted-foreground mt-0.5 font-normal">
+            Pengajuan permohonan waktu istirahat kerja dengan alur persetujuan berjenjang.
           </p>
         </div>
 
@@ -132,41 +132,41 @@ export const LeaveManagement: React.FC = () => {
             setFormError(null)
             setIsModalOpen(true)
           }}
-          className="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm flex items-center space-x-2 shadow-lg shadow-indigo-600/25 transition-all hover:-translate-y-0.5"
+          className="px-3.5 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs flex items-center space-x-1.5 shadow-xs transition-colors"
         >
-          <Icon icon={PlusSignIcon} size={18} />
-          <span>Ajukan Cuti Baru</span>
+          <Icon icon={PlusSignIcon} size={15} />
+          <span>Ajukan Cuti</span>
         </button>
       </div>
 
       {successMessage && (
-        <div className="my-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center justify-between">
+        <div className="my-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-between font-normal">
           <div className="flex items-center space-x-2">
-            <Icon icon={CheckmarkCircle01Icon} size={20} className="text-emerald-600 flex-shrink-0" />
+            <Icon icon={CheckmarkCircle01Icon} size={16} className="text-emerald-500 flex-shrink-0" />
             <span>{successMessage}</span>
           </div>
-          <button type="button" onClick={() => setSuccessMessage(null)} className="text-emerald-700 hover:text-emerald-900">
-            <Icon icon={Cancel01Icon} size={18} />
+          <button type="button" onClick={() => setSuccessMessage(null)} className="text-emerald-600 hover:text-emerald-700">
+            <Icon icon={Cancel01Icon} size={16} />
           </button>
         </div>
       )}
 
       {/* Quota Balances Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
         {balances.map((b) => (
           <div
             key={b.id}
-            className="p-5 rounded-2xl bg-gradient-to-br from-indigo-50/70 to-slate-50 border border-indigo-100/80 shadow-sm"
+            className="p-4 rounded-xl bg-muted/40 border border-border"
           >
-            <div className="text-xs font-bold text-indigo-700 uppercase tracking-wider">
+            <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
               {b.leave_type?.name || 'Cuti Tahunan'} ({b.year})
             </div>
-            <div className="mt-2 flex items-baseline justify-between">
+            <div className="mt-1 flex items-baseline justify-between">
               <div>
-                <span className="text-3xl font-black text-slate-900">{b.remaining_quota}</span>
-                <span className="text-xs text-slate-500 ml-1">Hari Tersisa</span>
+                <span className="text-2xl font-semibold text-foreground">{b.remaining_quota}</span>
+                <span className="text-xs text-muted-foreground ml-1 font-normal">Hari Tersisa</span>
               </div>
-              <div className="text-right text-xs text-slate-500">
+              <div className="text-right text-[11px] text-muted-foreground font-normal">
                 <div>Total: {b.initial_quota}</div>
                 <div>Terpakai: {b.used_quota}</div>
               </div>
@@ -179,54 +179,54 @@ export const LeaveManagement: React.FC = () => {
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
-              <th className="pb-3 px-3">No. Pengajuan</th>
-              <th className="pb-3 px-3">Jenis Cuti</th>
-              <th className="pb-3 px-3">Rentang Tanggal</th>
-              <th className="pb-3 px-3">Durasi</th>
-              <th className="pb-3 px-3">Alasan</th>
-              <th className="pb-3 px-3">Tahap Persetujuan</th>
-              <th className="pb-3 px-3">Status</th>
+            <tr className="border-b border-border text-[11px] font-medium uppercase text-muted-foreground/80">
+              <th className="pb-2.5 px-3">No. Pengajuan</th>
+              <th className="pb-2.5 px-3">Jenis Cuti</th>
+              <th className="pb-2.5 px-3">Rentang Tanggal</th>
+              <th className="pb-2.5 px-3">Durasi</th>
+              <th className="pb-2.5 px-3">Alasan</th>
+              <th className="pb-2.5 px-3">Tahap Persetujuan</th>
+              <th className="pb-2.5 px-3">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-border">
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-400">
+                <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
                   Memuat data pengajuan cuti...
                 </td>
               </tr>
             ) : requests.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-400">
+                <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
                   Belum ada riwayat permohonan cuti.
                 </td>
               </tr>
             ) : (
               requests.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-3 px-3 font-mono text-xs font-bold text-indigo-600">
+                <tr key={r.id} className="hover:bg-muted/40 transition-colors">
+                  <td className="py-2.5 px-3 text-xs font-normal text-primary">
                     {r.request_number}
                   </td>
-                  <td className="py-3 px-3 font-medium text-slate-900">{r.leave_type?.name}</td>
-                  <td className="py-3 px-3 text-xs">
+                  <td className="py-2.5 px-3 font-normal text-xs text-foreground">{r.leave_type?.name}</td>
+                  <td className="py-2.5 px-3 text-xs font-normal text-muted-foreground">
                     {r.start_date} s/d {r.end_date}
                   </td>
-                  <td className="py-3 px-3 text-xs font-bold">{r.total_days} hari</td>
-                  <td className="py-3 px-3 text-xs text-slate-600 max-w-xs truncate">{r.reason}</td>
-                  <td className="py-3 px-3 text-xs">
-                    <span className="inline-flex items-center space-x-1 font-medium text-slate-700">
+                  <td className="py-2.5 px-3 text-xs font-normal text-foreground">{r.total_days} hari</td>
+                  <td className="py-2.5 px-3 text-xs text-muted-foreground max-w-xs truncate font-normal">{r.reason}</td>
+                  <td className="py-2.5 px-3 text-xs font-normal">
+                    <span className="inline-flex items-center space-x-1 text-muted-foreground">
                       <span>{r.current_step === 'manager' ? '1. Line Manager' : '2. HR Manager'}</span>
                     </span>
                   </td>
-                  <td className="py-3 px-3">
+                  <td className="py-2.5 px-3">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                      className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-medium border ${
                         r.status === 'approved'
-                          ? 'bg-emerald-100 text-emerald-800'
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
                           : r.status === 'rejected'
-                          ? 'bg-rose-100 text-rose-800'
-                          : 'bg-amber-100 text-amber-800'
+                          ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25'
+                          : 'bg-secondary text-secondary-foreground border-secondary/40'
                       }`}
                     >
                       {r.status === 'approved'
@@ -245,38 +245,38 @@ export const LeaveManagement: React.FC = () => {
 
       {/* Modal Apply Leave */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl p-6 lg:p-8 max-w-md w-full shadow-2xl border border-slate-100 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-card rounded-2xl p-6 max-w-md w-full shadow-xl border border-border relative">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1"
             >
-              <Icon icon={Cancel01Icon} size={20} />
+              <Icon icon={Cancel01Icon} size={18} />
             </button>
 
-            <h3 className="text-xl font-bold text-slate-900 mb-1">Form Permohonan Cuti</h3>
-            <p className="text-xs text-slate-500 mb-6">
+            <h3 className="text-base font-semibold text-foreground mb-1">Form Permohonan Cuti</h3>
+            <p className="text-xs text-muted-foreground mb-5 font-normal">
               Sistem akan memvalidasi aturan H-3 (Cuti Tahunan) dan lampiran surat dokter (Izin Sakit).
             </p>
 
             {formError && (
-              <div className="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start space-x-2">
-                <Icon icon={AlertCircleIcon} size={16} className="flex-shrink-0 mt-0.5" />
+              <div className="mb-4 p-3 rounded-lg bg-secondary/20 border border-secondary/40 text-foreground text-xs flex items-start space-x-2 font-normal">
+                <Icon icon={AlertCircleIcon} size={16} className="shrink-0 mt-0.5" />
                 <span>{formError}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+                <label className="block text-xs font-normal text-muted-foreground uppercase mb-1">
                   Jenis Cuti / Izin
                 </label>
                 <select
                   required
                   value={selectedTypeId}
                   onChange={(e) => setSelectedTypeId(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">-- Pilih Jenis Cuti --</option>
                   {types.map((t) => (
@@ -289,7 +289,7 @@ export const LeaveManagement: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+                  <label className="block text-xs font-normal text-muted-foreground uppercase mb-1">
                     Tanggal Mulai
                   </label>
                   <input
@@ -297,11 +297,11 @@ export const LeaveManagement: React.FC = () => {
                     required
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+                  <label className="block text-xs font-normal text-muted-foreground uppercase mb-1">
                     Tanggal Selesai
                   </label>
                   <input
@@ -309,13 +309,13 @@ export const LeaveManagement: React.FC = () => {
                     required
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+                <label className="block text-xs font-normal text-muted-foreground uppercase mb-1">
                   Alasan / Keterangan
                 </label>
                 <textarea
@@ -324,13 +324,13 @@ export const LeaveManagement: React.FC = () => {
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="Jelaskan keperluan cuti..."
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               {selectedType?.requires_attachment && (
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+                  <label className="block text-xs font-normal text-muted-foreground uppercase mb-1">
                     Unggah Bukti Surat Dokter (Maks 1 MB)
                   </label>
                   <input
@@ -338,23 +338,23 @@ export const LeaveManagement: React.FC = () => {
                     accept=".pdf,.jpg,.jpeg,.png"
                     required
                     onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                    className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                    className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-normal file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                   />
                 </div>
               )}
 
-              <div className="pt-4 flex items-center space-x-3">
+              <div className="pt-3 flex items-center space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50"
+                  className="flex-1 py-2 rounded-lg border border-border text-foreground font-normal text-xs hover:bg-muted/50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+                  className="flex-1 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs shadow-xs transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? 'Mengirim...' : 'Kirim Pengajuan'}
                 </button>

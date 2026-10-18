@@ -70,185 +70,191 @@ export const AttendanceAudit: React.FC = () => {
   }, [anomalies])
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+    <div className="space-y-5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-card p-5 rounded-2xl border border-border shadow-xs">
         <div>
-          <div className="flex items-center space-x-2 text-rose-600 font-bold text-xs uppercase tracking-wider mb-1">
-            <Icon icon={AlertCircleIcon} size={16} />
+          <div className="flex items-center space-x-1.5 text-primary font-normal text-xs uppercase tracking-wider mb-1">
+            <Icon icon={AlertCircleIcon} size={15} />
             <span>Audit & Compliance HR</span>
           </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-lg font-semibold text-foreground tracking-tight">
             Audit Anomali Presensi Harian
           </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Pemeriksaan pelanggaran disiplin kerja: keterlambatan melebihi 15 menit toleransi dan ketidaksesuaian clock-in/out.
+          <p className="text-xs text-muted-foreground mt-0.5 font-normal">
+            Pemeriksaan keterlambatan toleransi shift dan ketidaksesuaian absensi.
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 space-x-2 text-sm text-slate-700 shadow-inner">
-            <Icon icon={Calendar03Icon} size={18} className="text-slate-400" />
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center bg-muted border border-border rounded-lg px-2.5 py-1.5 space-x-2 text-xs text-foreground">
+            <Icon icon={Calendar03Icon} size={15} className="text-muted-foreground" />
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-transparent focus:outline-none font-semibold text-slate-800"
+              className="bg-transparent focus:outline-none font-normal text-foreground text-xs"
             />
           </div>
           <button
             type="button"
             onClick={() => fetchAnomalies(selectedDate)}
-            className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded-2xl text-sm transition-all border border-indigo-200/50"
+            className="px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 font-medium rounded-lg text-xs transition-colors shadow-xs"
           >
             Segarkan
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className={`p-4 rounded-xl border shadow-xs ${
+          summary.total > 0
+            ? 'bg-rose-500/10 border-rose-500/20'
+            : 'bg-card border-border'
+        }`}>
+          <div className={`text-[11px] font-medium uppercase tracking-wider ${
+            summary.total > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-muted-foreground'
+          }`}>
             Total Anomali
           </div>
-          <div className="text-3xl font-black text-rose-600 mt-2">
+          <div className="text-xl font-semibold text-foreground mt-1">
             {summary.total}
           </div>
-          <div className="text-xs text-slate-500 mt-1">Pelanggaran tercatat hari ini</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Kasus tercatat</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-amber-100 shadow-sm">
-          <div className="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center space-x-1">
-            <Icon icon={Clock01Icon} size={14} />
-            <span>Karyawan Terlambat</span>
+        <div className="bg-card p-4 rounded-xl border border-secondary/40 bg-secondary/20 shadow-xs">
+          <div className="text-[11px] font-medium text-foreground uppercase tracking-wider flex items-center space-x-1">
+            <Icon icon={Clock01Icon} size={13} />
+            <span>Terlambat</span>
           </div>
-          <div className="text-3xl font-black text-amber-600 mt-2">
+          <div className="text-xl font-semibold text-foreground mt-1">
             {summary.late}
           </div>
-          <div className="text-xs text-amber-700/80 mt-1">&gt; 15 menit toleransi shift</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">&gt; 15 menit shift</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-indigo-100 shadow-sm">
-          <div className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+        <div className="bg-card p-4 rounded-xl border border-border shadow-xs">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
             Tanpa Clock-Out
           </div>
-          <div className="text-3xl font-black text-indigo-600 mt-2">
+          <div className="text-xl font-semibold text-foreground mt-1">
             {summary.noClockOut}
           </div>
-          <div className="text-xs text-indigo-700/80 mt-1">Belum scan pulang kerja</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Belum scan pulang</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm">
-          <div className="text-xs font-bold text-rose-600 uppercase tracking-wider">
+        <div className="bg-card p-4 rounded-xl border border-border bg-muted/40 shadow-xs">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
             Total Menit Telat
           </div>
-          <div className="text-3xl font-black text-slate-900 mt-2">
-            {summary.totalLateMinutes} <span className="text-sm font-semibold text-slate-400">menit</span>
+          <div className="text-xl font-semibold text-foreground mt-1">
+            {summary.totalLateMinutes} <span className="text-xs font-normal text-muted-foreground">menit</span>
           </div>
-          <div className="text-xs text-rose-500 mt-1">Otomatis terpotong di payroll</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Terpotong di payroll</div>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+      <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-border flex items-center justify-between gap-3">
           <div className="relative flex-1 max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-              <Icon icon={Search01Icon} size={18} />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <Icon icon={Search01Icon} size={15} />
             </div>
             <input
               type="text"
-              placeholder="Cari nama atau NIK karyawan..."
+              placeholder="Cari nama atau NIK..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200/80 rounded-2xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+              className="w-full pl-9 pr-3 py-1.5 bg-muted/50 border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-normal"
             />
           </div>
-          <span className="text-xs font-bold text-slate-400">
-            {filtered.length} Kasus Terdeteksi
+          <span className="text-xs font-normal text-muted-foreground">
+            {filtered.length} Kasus
           </span>
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center space-y-3">
-            <div className="w-8 h-8 border-3 border-rose-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs font-semibold">Menganalisis anomali kehadiran...</span>
+          <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-2 font-normal">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-xs">Menganalisis data...</span>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2 border border-emerald-100">
-              <Icon icon={CheckmarkCircle01Icon} size={24} />
-            </div>
-            <span className="text-sm font-bold text-slate-800">
+          <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-1.5 font-normal">
+            <Icon icon={CheckmarkCircle01Icon} size={22} className="text-emerald-500" />
+            <span className="text-sm font-medium text-foreground">
               Tidak Ada Anomali Kehadiran
             </span>
-            <span className="text-xs text-slate-400 max-w-sm">
-              Semua karyawan pada tanggal ini mematuhi jadwal shift dan radius geofence kantor dengan sempurna.
+            <span className="text-xs text-muted-foreground max-w-sm">
+              Semua karyawan pada tanggal ini mematuhi jadwal shift dan radius GPS kantor.
             </span>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50/75 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+            <table className="w-full text-left text-sm text-foreground">
+              <thead className="bg-muted/40 text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider border-b border-border">
                 <tr>
-                  <th className="py-3.5 px-6">Karyawan</th>
-                  <th className="py-3.5 px-6">Shift Kerja</th>
-                  <th className="py-3.5 px-6">Waktu Masuk</th>
-                  <th className="py-3.5 px-6">Keterlambatan</th>
-                  <th className="py-3.5 px-6">Radius GPS</th>
-                  <th className="py-3.5 px-6">Konsekuensi Payroll</th>
+                  <th className="py-2.5 px-4">Karyawan</th>
+                  <th className="py-2.5 px-4">Shift Kerja</th>
+                  <th className="py-2.5 px-4">Waktu Masuk</th>
+                  <th className="py-2.5 px-4">Keterlambatan</th>
+                  <th className="py-2.5 px-4">Radius GPS</th>
+                  <th className="py-2.5 px-4">Konsekuensi Payroll</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-border">
                 {filtered.map((item) => {
                   const clockInStr = getClockTimeString(item.clock_in)
                   const distance = getDistanceMeters(item.clock_in)
                   const lateMinutes = item.late_minutes || 0
 
                   return (
-                    <tr key={item.id} className="hover:bg-rose-50/20 transition-colors">
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-9 h-9 rounded-2xl bg-rose-100 text-rose-700 font-black text-xs flex items-center justify-center shrink-0 border border-rose-200/60">
+                    <tr key={item.id} className="hover:bg-muted/40 transition-colors">
+                      <td className="py-2.5 px-4">
+                        <div className="flex items-center space-x-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-medium text-xs flex items-center justify-center shrink-0 border border-primary/20">
                             {((item as any).employee_name || item.employee?.user?.name || 'K').charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-bold text-slate-900">
+                            <div className="font-normal text-foreground text-xs">
                               {(item as any).employee_name || item.employee?.user?.name || 'Karyawan'}
                             </div>
-                            <div className="text-xs text-slate-400 font-mono">
+                            <div className="text-[10px] text-muted-foreground font-normal">
                               NIK: {(item as any).nik || item.employee?.nik || '-'} • {(item.employee?.department?.name || 'Divisi')}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-6">
-                        <div className="font-semibold text-slate-800 text-xs">
+                      <td className="py-2.5 px-4">
+                        <div className="font-normal text-foreground text-xs">
                           {item.shift?.name || 'Shift Reguler'}
                         </div>
-                        <div className="text-[11px] text-slate-400 font-mono">
+                        <div className="text-[10px] text-muted-foreground font-normal">
                           {item.shift?.start_time} - {item.shift?.end_time}
                         </div>
                       </td>
-                      <td className="py-4 px-6 font-mono font-semibold text-rose-600 text-xs">
+                      <td className="py-2.5 px-4 font-normal text-foreground text-xs">
                         {clockInStr}
                       </td>
-                      <td className="py-4 px-6">
-                        <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
-                          <Icon icon={AlertCircleIcon} size={13} />
+                      <td className="py-2.5 px-4">
+                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-medium border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25">
+                          <Icon icon={AlertCircleIcon} size={12} />
                           <span>+{lateMinutes} Menit</span>
                         </span>
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-2.5 px-4">
                         {distance !== null ? (
-                          <span className="inline-flex items-center space-x-1 text-xs text-slate-600 font-mono">
-                            <Icon icon={Location01Icon} size={13} className="text-slate-400" />
-                            <span>{distance}m</span>
+                          <span className={`inline-flex items-center space-x-1 text-xs font-normal ${
+                            distance <= 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                          }`}>
+                            <Icon icon={Location01Icon} size={12} />
+                            <span>{distance}m {distance <= 100 ? '(Aman)' : '(Luar Radius)'}</span>
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-300">-</span>
+                          <span className="text-xs text-muted-foreground font-normal">-</span>
                         )}
                       </td>
-                      <td className="py-4 px-6">
-                        <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl">
+                      <td className="py-2.5 px-4">
+                        <span className="text-[11px] font-normal text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg">
                           Dipotong Rp 25.000/jam
                         </span>
                       </td>

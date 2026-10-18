@@ -11,6 +11,8 @@ import {
 import { Icon } from '../common/Icon'
 import api from '../../services/api'
 import type { Employee, Department, Attendance, PayrollPeriod } from '../../types'
+import { Card, CardTitle, CardDescription } from '../ui/card'
+import { Badge } from '../ui/badge'
 
 interface HrDashboardAnalyticsProps {
   onNavigateTab: (tab: string) => void
@@ -23,7 +25,7 @@ export const HrDashboardAnalytics: React.FC<HrDashboardAnalyticsProps> = ({
   const [departments, setDepartments] = useState<Department[]>([])
   const [anomalies, setAnomalies] = useState<Attendance[]>([])
   const [, setPeriods] = useState<PayrollPeriod[]>([])
-  const [, setLoading] = useState<boolean>(true)
+  const [loading, setLoading] = useState<boolean>(true)
 
   const loadDashboardData = async () => {
     setLoading(true)
@@ -92,205 +94,280 @@ export const HrDashboardAnalytics: React.FC<HrDashboardAnalyticsProps> = ({
     }).format(val)
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-7 rounded-3xl shadow-xl relative overflow-hidden">
-        <div className="relative z-10 max-w-2xl">
-          <div className="flex items-center space-x-2 text-indigo-400 font-bold text-xs uppercase tracking-wider mb-2">
-            <Icon icon={Analytics01Icon} size={16} />
-            <span>Executive HR Intelligence</span>
+  if (loading) {
+    return (
+      <div className="space-y-5 animate-pulse">
+        {/* Header Banner Skeleton */}
+        <div className="bg-muted/70 p-6 rounded-2xl border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-2.5">
+            <div className="w-24 h-5 rounded-md bg-muted" />
+            <div className="w-64 sm:w-80 h-6 rounded-lg bg-muted" />
+            <div className="w-72 sm:w-96 h-4 rounded-md bg-muted/60" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-            Ringkasan Analitik SDM & Kepatuhan Organisasi
+        </div>
+
+        {/* KPI Cards Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="p-4 rounded-xl space-y-2.5">
+              <div className="flex items-center space-x-1.5">
+                <div className="w-4 h-4 rounded bg-muted" />
+                <div className="w-20 h-3 rounded bg-muted" />
+              </div>
+              <div className="w-24 h-6 rounded-md bg-muted mt-1" />
+              <div className="w-16 h-3 rounded bg-muted/60" />
+            </Card>
+          ))}
+        </div>
+
+        {/* 2 Middle Cards Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Dept Distribution Skeleton */}
+          <Card className="p-5 rounded-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1.5">
+                <div className="w-36 h-4 rounded bg-muted" />
+                <div className="w-28 h-3 rounded bg-muted/60" />
+              </div>
+              <div className="w-7 h-7 rounded-lg bg-muted" />
+            </div>
+
+            <div className="space-y-3 pt-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="space-y-1.5">
+                  <div className="flex justify-between">
+                    <div className="w-32 h-3.5 rounded bg-muted" />
+                    <div className="w-14 h-3.5 rounded bg-muted" />
+                  </div>
+                  <div className="w-full h-2 rounded bg-muted" />
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Contract Status Skeleton */}
+          <Card className="p-5 rounded-xl space-y-3 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="space-y-1.5">
+                  <div className="w-36 h-4 rounded bg-muted" />
+                  <div className="w-28 h-3 rounded bg-muted/60" />
+                </div>
+                <div className="w-7 h-7 rounded-lg bg-muted" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border space-y-2">
+                    <div className="w-20 h-2.5 rounded bg-muted" />
+                    <div className="w-10 h-5 rounded bg-muted" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-border flex gap-2">
+              <div className="flex-1 h-7 rounded-lg bg-muted" />
+              <div className="flex-1 h-7 rounded-lg bg-muted" />
+              <div className="flex-1 h-7 rounded-lg bg-muted" />
+            </div>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Header Banner - Concise & Direct */}
+      <div className="bg-primary text-white p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-medium uppercase mb-2">
+            <Icon icon={Analytics01Icon} size={13} className="mr-1" />
+            Ringkasan SDM
+          </Badge>
+          <h2 className="text-lg sm:text-xl font-semibold tracking-tight">
+            Dashboard Analitik & Kepatuhan
           </h2>
-          <p className="text-slate-300 text-xs sm:text-sm mt-2 leading-relaxed">
-            Pusat kendali komprehensif untuk memantau produktivitas karyawan, kepatuhan batas toleransi presensi, struktur kontrak, dan proyeksi anggaran payroll.
+          <p className="text-white/80 text-xs mt-1 font-normal">
+            Pantau kehadiran, kontrak kerja, dan proyeksi anggaran gaji.
           </p>
         </div>
-
-        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
-            <Icon icon={UserGroupIcon} size={16} className="text-indigo-600" />
-            <span>Total Karyawan</span>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card className="p-4 rounded-xl">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase flex items-center space-x-1.5">
+            <Icon icon={UserGroupIcon} size={15} className="text-primary" />
+            <span>Karyawan</span>
           </div>
-          <div className="text-3xl font-black text-slate-900 mt-2">
+          <div className="text-xl font-semibold text-foreground mt-1">
             {stats.totalEmployees}
           </div>
-          <div className="text-xs text-slate-500 mt-1">
-            Tersebar di {stats.totalDepts} departemen
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">
+            {stats.totalDepts} Departemen
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white p-5 rounded-3xl border border-indigo-100 shadow-sm">
-          <div className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center space-x-1.5">
-            <Icon icon={DollarCircleIcon} size={16} />
-            <span>Estimasi Beban Gaji</span>
+        <Card className="p-4 rounded-xl">
+          <div className="text-[11px] font-medium text-primary uppercase flex items-center space-x-1.5">
+            <Icon icon={DollarCircleIcon} size={15} />
+            <span>Estimasi Gaji</span>
           </div>
-          <div className="text-xl font-black text-slate-900 mt-2 font-mono">
+          <div className="text-base font-semibold text-foreground mt-1">
             {formatRupiah(stats.estimatedPayroll)}
           </div>
-          <div className="text-xs text-indigo-700/80 mt-1">Proyeksi bulanan pokok</div>
-        </div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Gaji pokok bulanan</div>
+        </Card>
 
-        <div className="bg-white p-5 rounded-3xl border border-amber-100 shadow-sm">
-          <div className="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center space-x-1.5">
-            <Icon icon={Clock01Icon} size={16} />
-            <span>Kepatuhan Presensi</span>
+        <Card className="p-4 rounded-xl">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase flex items-center space-x-1.5">
+            <Icon icon={Clock01Icon} size={15} className="text-emerald-500" />
+            <span>Kepatuhan Jam</span>
           </div>
-          <div className="text-3xl font-black text-amber-600 mt-2">
+          <div className="text-xl font-semibold text-foreground mt-1">
             {stats.totalEmployees > 0
               ? Math.max(0, 100 - Math.round((stats.totalAnomalies / stats.totalEmployees) * 100))
               : 100}
             %
           </div>
-          <div className="text-xs text-amber-700/80 mt-1">On-time & Geofence valid</div>
-        </div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Tepat waktu & GPS</div>
+        </Card>
 
-        <div className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm">
-          <div className="text-xs font-bold text-rose-600 uppercase tracking-wider flex items-center space-x-1.5">
-            <Icon icon={AlertCircleIcon} size={16} />
+        <Card className={`p-4 rounded-xl ${
+          stats.totalAnomalies > 0 ? 'bg-rose-500/10 border-rose-500/20' : ''
+        }`}>
+          <div className={`text-[11px] font-medium uppercase flex items-center space-x-1.5 ${
+            stats.totalAnomalies > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-muted-foreground'
+          }`}>
+            <Icon icon={AlertCircleIcon} size={15} className={stats.totalAnomalies > 0 ? 'text-rose-500' : ''} />
             <span>Anomali Hari Ini</span>
           </div>
-          <div className="text-3xl font-black text-rose-600 mt-2">
+          <div className="text-xl font-semibold text-foreground mt-1">
             {stats.totalAnomalies}
           </div>
-          <div className="text-xs text-rose-500 mt-1">Keterlambatan & absensi</div>
-        </div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Terlambat & absen</div>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Dept Distribution */}
+        <Card className="p-5 rounded-xl space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-black text-slate-900">
-                Distribusi Karyawan per Departemen
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Komposisi tenaga kerja pada setiap divisi perusahaan.
-              </p>
+              <CardTitle className="text-sm font-semibold text-foreground">
+                Distribusi Departemen
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground font-normal">
+                Jumlah staf per divisi
+              </CardDescription>
             </div>
-            <span className="p-2 rounded-2xl bg-slate-50 text-slate-400">
-              <Icon icon={Building01Icon} size={20} />
+            <span className="p-1.5 rounded-lg bg-muted text-muted-foreground">
+              <Icon icon={Building01Icon} size={18} />
             </span>
           </div>
 
-          <div className="space-y-3.5 pt-2">
+          <div className="space-y-2.5 pt-1">
             {stats.deptDistribution.map((dept) => (
-              <div key={dept.id} className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-800">{dept.name} ({dept.code})</span>
-                  <span className="text-slate-500 font-mono">
-                    {dept.count} orang ({dept.percentage}%)
+              <div key={dept.id} className="space-y-1">
+                <div className="flex justify-between text-xs font-normal">
+                  <span className="text-foreground">{dept.name} ({dept.code})</span>
+                  <span className="text-muted-foreground font-medium">
+                    {dept.count} ({dept.percentage}%)
                   </span>
                 </div>
-                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-muted rounded-sm overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-indigo-500 to-indigo-700 rounded-full transition-all duration-500"
+                    className="h-full bg-primary rounded-sm transition-all duration-500"
                     style={{ width: `${Math.max(dept.percentage, 5)}%` }}
                   />
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 flex flex-col justify-between">
+        {/* Contract Status */}
+        <Card className="p-5 rounded-xl space-y-3 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="text-base font-black text-slate-900">
-                  Status Kepegawaian & Kontrak Kerja
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Keseimbangan karyawan tetap PKWTT vs kontrak PKWT.
-                </p>
+                <CardTitle className="text-sm font-semibold text-foreground">
+                  Status Kontrak Kerja
+                </CardTitle>
+                <CardDescription className="text-xs text-muted-foreground font-normal">
+                  Komposisi status kepegawaian
+                </CardDescription>
               </div>
-              <span className="p-2 rounded-2xl bg-indigo-50 text-indigo-600">
-                <Icon icon={CheckmarkCircle01Icon} size={20} />
+              <span className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                <Icon icon={CheckmarkCircle01Icon} size={18} />
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100">
-                <div className="text-[11px] font-bold text-emerald-700 uppercase">
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="text-[10px] font-medium text-primary uppercase">
                   Tetap (PKWTT)
                 </div>
-                <div className="text-2xl font-black text-emerald-800 mt-1">
+                <div className="text-lg font-semibold text-foreground mt-0.5">
                   {stats.permanentCount}
                 </div>
-                <div className="text-[11px] text-emerald-600 mt-0.5">
-                  {stats.totalEmployees > 0
-                    ? Math.round((stats.permanentCount / stats.totalEmployees) * 100)
-                    : 0}
-                  % dari total
-                </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100">
-                <div className="text-[11px] font-bold text-blue-700 uppercase">
+              <div className="p-3 rounded-lg bg-muted/40 border border-border">
+                <div className="text-[10px] font-medium text-muted-foreground uppercase">
                   Kontrak (PKWT)
                 </div>
-                <div className="text-2xl font-black text-blue-800 mt-1">
+                <div className="text-lg font-semibold text-foreground mt-0.5">
                   {stats.contractCount}
                 </div>
-                <div className="text-[11px] text-blue-600 mt-0.5">
-                  {stats.totalEmployees > 0
-                    ? Math.round((stats.contractCount / stats.totalEmployees) * 100)
-                    : 0}
-                  % dari total
-                </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-100">
-                <div className="text-[11px] font-bold text-amber-700 uppercase">
-                  Masa Percobaan
+              <div className="p-3 rounded-lg bg-secondary/20 border border-secondary/40">
+                <div className="text-[10px] font-medium text-foreground uppercase">
+                  Probation
                 </div>
-                <div className="text-2xl font-black text-amber-800 mt-1">
+                <div className="text-lg font-semibold text-foreground mt-0.5">
                   {stats.probationCount}
                 </div>
-                <div className="text-[11px] text-amber-600 mt-0.5">Probation 3 Bulan</div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-100">
-                <div className="text-[11px] font-bold text-purple-700 uppercase">
-                  Magang / Intern
+              <div className="p-3 rounded-lg bg-muted/40 border border-border">
+                <div className="text-[10px] font-medium text-muted-foreground uppercase">
+                  Magang
                 </div>
-                <div className="text-2xl font-black text-purple-800 mt-1">
+                <div className="text-lg font-semibold text-muted-foreground mt-0.5">
                   {stats.internCount}
                 </div>
-                <div className="text-[11px] text-purple-600 mt-0.5">Kampus Merdeka</div>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-2">
+          <div className="pt-3 border-t border-border flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => onNavigateTab('hr-employees')}
-              className="flex-1 py-2 px-3 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold rounded-xl text-xs transition-colors border border-slate-200/60 text-center"
+              className="flex-1 py-1.5 px-2.5 bg-muted hover:bg-primary/10 hover:text-primary text-foreground font-normal rounded-lg text-xs transition-colors border border-border text-center"
             >
-              + Kelola Karyawan
+              Karyawan
             </button>
             <button
               type="button"
               onClick={() => onNavigateTab('hr-anomalies')}
-              className="flex-1 py-2 px-3 bg-slate-50 hover:bg-rose-50 hover:text-rose-700 text-slate-700 font-bold rounded-xl text-xs transition-colors border border-slate-200/60 text-center"
+              className="flex-1 py-1.5 px-2.5 bg-muted hover:bg-primary/10 hover:text-primary text-foreground font-normal rounded-lg text-xs transition-colors border border-border text-center"
             >
-              Audit Anomali
+              Anomali
             </button>
             <button
               type="button"
               onClick={() => onNavigateTab('hr-payroll')}
-              className="flex-1 py-2 px-3 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-bold rounded-xl text-xs transition-colors border border-slate-200/60 text-center"
+              className="flex-1 py-1.5 px-2.5 bg-muted hover:bg-primary/10 hover:text-primary text-foreground font-normal rounded-lg text-xs transition-colors border border-border text-center"
             >
-              Proses Payroll
+              Payroll
             </button>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   )
