@@ -10,11 +10,24 @@ export const api = axios.create({
   },
 })
 
-// Request Interceptor: Attach Sanctum Bearer Token
+// Lightweight in-memory GET cache & in-flight deduplication (30s TTL)
+const CACHE_TTL_MS = 30_000
+const responseCache = new Map<string, { timestamp: number; response: any }>()
+const inflightRequests = new Map<string, Promise<any>>()
+
+export const clearApiCache = () => {
+  responseCache.clear()
+  inflightRequests.clear()
+}
+
+// Request Interceptor: Attach Sanctum Bearer Token & invalidate cache on mutations
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('hris_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
+  }
+  if (config.method && config.method.toLowerCase() !== 'get') {
+    responseCache.clear()
   }
   return config
 })
@@ -24,6 +37,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      responseCache.clear()
       localStorage.removeItem('hris_token')
       localStorage.removeItem('hris_user')
       window.dispatchEvent(new Event('auth:unauthorized'))
@@ -31,6 +45,35 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+const rawGet = api.get.bind(api)
+api.get = ((url: string, config?: any) => {
+  if (config?.responseType === 'blob' || url === '/auth/me') {
+    return rawGet(url, config)
+  }
+  const token = localStorage.getItem('hris_token') || ''
+  const key = `${token}:${url}:${JSON.stringify(config?.params || '')}`
+  const cached = responseCache.get(key)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return Promise.resolve(cached.response)
+  }
+  const inflight = inflightRequests.get(key)
+  if (inflight) {
+    return inflight
+  }
+  const req = rawGet(url, config)
+    .then((res) => {
+      responseCache.set(key, { timestamp: Date.now(), response: res })
+      inflightRequests.delete(key)
+      return res
+    })
+    .catch((err) => {
+      inflightRequests.delete(key)
+      throw err
+    })
+  inflightRequests.set(key, req)
+  return req
+}) as typeof api.get
 
 export const authService = {
   login: (credentials: { email: string; password: string }) =>
@@ -106,6 +149,29 @@ export const payrollService = {
   getDetail: (id: number) => api.get(`/payrolls/${id}`),
   downloadPdf: (id: number) =>
     api.get(`/payrolls/${id}/download`, { responseType: 'blob' }),
+}
+
+export const userService = {
+  getUsers: () => api.get('/users'),
+  createUser: (data: {
+    name: string
+    email: string
+    phone?: string
+    password: string
+    role: string
+    is_active?: boolean
+  }) => api.post('/users', data),
+  updateUser: (
+    id: number,
+    data: {
+      name?: string
+      email?: string
+      phone?: string | null
+      password?: string
+      role?: string
+      is_active?: boolean
+    }
+  ) => api.put(`/users/${id}`, data),
 }
 
 export default api

@@ -1,46 +1,17 @@
-﻿import React, { createContext, useContext, useEffect, useState } from 'react'
-import { authService } from '../services/api'
-import type { Role, User } from '../types'
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { authService, clearApiCache } from '../services/api'
+import type { User } from '../types'
 
 interface AuthContextType {
   user: User | null
   token: string | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
-  demoLogin: (role: Role) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-export const DEMO_ACCOUNTS: Record<Role, { email: string; label: string; desc: string }> = {
-  Superadmin: {
-    email: 'superadmin@hris.local',
-    label: 'Super Admin',
-    desc: 'Akses Penuh Konfigurasi & Master Data',
-  },
-  'HR Manager': {
-    email: 'hrmanager@hris.local',
-    label: 'HR Manager',
-    desc: 'Otorisasi Payroll & Final Approval Cuti',
-  },
-  'HR Staff': {
-    email: 'hrstaff@hris.local',
-    label: 'HR Staff',
-    desc: 'Kelola Karyawan & Generate Draf Gaji',
-  },
-  Manager: {
-    email: 'manager@hris.local',
-    label: 'Line Manager (Budi P.)',
-    desc: 'Approval Tahap 1 Cuti & Lembur Tim',
-  },
-  Employee: {
-    email: 'employee@hris.local',
-    label: 'Karyawan (Siti N.)',
-    desc: 'Presensi GPS, Ajukan Cuti & Slip Gaji',
-  },
-}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
@@ -48,7 +19,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : null
   })
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('hris_token'))
-  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    return Boolean(localStorage.getItem('hris_token') && !localStorage.getItem('hris_user'))
+  })
+  const skipNextRefresh = useRef<boolean>(false)
 
   const refreshUser = async () => {
     try {
@@ -69,12 +43,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (token) {
-      refreshUser()
+      if (skipNextRefresh.current) {
+        skipNextRefresh.current = false
+        setIsLoading(false)
+      } else {
+        refreshUser()
+      }
     } else {
       setIsLoading(false)
     }
 
     const handleUnauthorized = () => {
+      clearApiCache()
       setUser(null)
       setToken(null)
     }
@@ -86,23 +66,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
+      clearApiCache()
       const res = await authService.login({ email, password })
       if (res.data?.success) {
         const { token: newToken, user: userData } = res.data.data
-        setToken(newToken)
-        setUser(userData)
+        skipNextRefresh.current = true
         localStorage.setItem('hris_token', newToken)
         localStorage.setItem('hris_user', JSON.stringify(userData))
+        setUser(userData)
+        setToken(newToken)
       }
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const demoLogin = async (role: Role) => {
-    const cred = DEMO_ACCOUNTS[role]
-    if (cred) {
-      await login(cred.email, 'password')
     }
   }
 
@@ -112,6 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       // ignore
     } finally {
+      clearApiCache()
       setUser(null)
       setToken(null)
       localStorage.removeItem('hris_token')
@@ -126,7 +102,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token,
         isLoading,
         login,
-        demoLogin,
         logout,
         refreshUser,
       }}

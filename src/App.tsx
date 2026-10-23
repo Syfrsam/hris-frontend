@@ -1,25 +1,52 @@
-import React, { useState } from 'react'
+import React, { Suspense, lazy, useState } from 'react'
 import { AttendanceHistory } from './components/attendance/AttendanceHistory'
 import { AttendanceWidget } from './components/attendance/AttendanceWidget'
-import { ApprovalPanel } from './components/approvals/ApprovalPanel'
 import { LoginCard } from './components/auth/LoginCard'
 import { Navbar } from './components/layout/Navbar'
 import { Sidebar, type TabKey } from './components/layout/Sidebar'
-import { LeaveManagement } from './components/leave/LeaveManagement'
-import { OvertimeManagement } from './components/overtime/OvertimeManagement'
-import { PayslipViewer } from './components/payroll/PayslipViewer'
-import { TeamAttendance } from './components/manager/TeamAttendance'
-import { EmployeeManagement } from './components/hr/EmployeeManagement'
-import { BranchManagement } from './components/hr/BranchManagement'
-import { AttendanceAudit } from './components/hr/AttendanceAudit'
-import { PayrollManagement } from './components/hr/PayrollManagement'
-import { HrDashboardAnalytics } from './components/hr/HrDashboardAnalytics'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 
+const UserRoleManagement = lazy(() =>
+  import('./components/admin/UserRoleManagement').then((m) => ({ default: m.UserRoleManagement }))
+)
+const LeaveManagement = lazy(() =>
+  import('./components/leave/LeaveManagement').then((m) => ({ default: m.LeaveManagement }))
+)
+const OvertimeManagement = lazy(() =>
+  import('./components/overtime/OvertimeManagement').then((m) => ({ default: m.OvertimeManagement }))
+)
+const PayslipViewer = lazy(() =>
+  import('./components/payroll/PayslipViewer').then((m) => ({ default: m.PayslipViewer }))
+)
+const TeamAttendance = lazy(() =>
+  import('./components/manager/TeamAttendance').then((m) => ({ default: m.TeamAttendance }))
+)
+const ApprovalPanel = lazy(() =>
+  import('./components/approvals/ApprovalPanel').then((m) => ({ default: m.ApprovalPanel }))
+)
+const HrDashboardAnalytics = lazy(() =>
+  import('./components/hr/HrDashboardAnalytics').then((m) => ({ default: m.HrDashboardAnalytics }))
+)
+const EmployeeManagement = lazy(() =>
+  import('./components/hr/EmployeeManagement').then((m) => ({ default: m.EmployeeManagement }))
+)
+const BranchManagement = lazy(() =>
+  import('./components/hr/BranchManagement').then((m) => ({ default: m.BranchManagement }))
+)
+const AttendanceAudit = lazy(() =>
+  import('./components/hr/AttendanceAudit').then((m) => ({ default: m.AttendanceAudit }))
+)
+const PayrollManagement = lazy(() =>
+  import('./components/hr/PayrollManagement').then((m) => ({ default: m.PayrollManagement }))
+)
+
 const MainDashboard: React.FC = () => {
   const { user, token, isLoading } = useAuth()
-  const [activeTab, setActiveTab] = useState<TabKey>('attendance')
+  const isSuperadmin = Boolean(user?.roles?.includes('Superadmin'))
+  const [activeTab, setActiveTab] = useState<TabKey>(() =>
+    user?.roles?.includes('Superadmin') ? 'superadmin-users' : 'attendance'
+  )
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   if (isLoading) {
@@ -37,6 +64,9 @@ const MainDashboard: React.FC = () => {
     return <LoginCard />
   }
 
+  const effectiveTab: TabKey =
+    !isSuperadmin && activeTab === 'superadmin-users' ? 'attendance' : activeTab
+
   const handleSelectTab = (tab: TabKey) => {
     setActiveTab(tab)
     setIsMobileMenuOpen(false)
@@ -50,40 +80,50 @@ const MainDashboard: React.FC = () => {
       />
       <div className="flex-1 flex flex-col md:flex-row">
         <Sidebar
-          activeTab={activeTab}
+          activeTab={effectiveTab}
           onSelectTab={handleSelectTab}
           isOpen={isMobileMenuOpen}
           onClose={() => setIsMobileMenuOpen(false)}
         />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-          {activeTab === 'attendance' && (
+          {effectiveTab === 'attendance' && (
             <div>
               <AttendanceWidget />
               <AttendanceHistory />
             </div>
           )}
 
-          {activeTab === 'leaves' && <LeaveManagement />}
+          <Suspense
+            fallback={
+              <div className="p-8 flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            }
+          >
+            {effectiveTab === 'superadmin-users' && <UserRoleManagement />}
 
-          {activeTab === 'overtime' && <OvertimeManagement />}
+            {effectiveTab === 'leaves' && <LeaveManagement />}
 
-          {activeTab === 'payroll' && <PayslipViewer />}
+            {effectiveTab === 'overtime' && <OvertimeManagement />}
 
-          {activeTab === 'team-attendance' && <TeamAttendance />}
+            {effectiveTab === 'payroll' && <PayslipViewer />}
 
-          {activeTab === 'approvals' && <ApprovalPanel />}
+            {effectiveTab === 'team-attendance' && <TeamAttendance />}
 
-          {activeTab === 'hr-analytics' && (
-            <HrDashboardAnalytics onNavigateTab={(tab) => setActiveTab(tab as TabKey)} />
-          )}
+            {effectiveTab === 'approvals' && <ApprovalPanel />}
 
-          {activeTab === 'hr-employees' && <EmployeeManagement />}
+            {effectiveTab === 'hr-analytics' && (
+              <HrDashboardAnalytics onNavigateTab={(tab) => setActiveTab(tab as TabKey)} />
+            )}
 
-          {activeTab === 'hr-branches' && <BranchManagement />}
+            {effectiveTab === 'hr-employees' && <EmployeeManagement />}
 
-          {activeTab === 'hr-anomalies' && <AttendanceAudit />}
+            {effectiveTab === 'hr-branches' && <BranchManagement />}
 
-          {activeTab === 'hr-payroll' && <PayrollManagement />}
+            {effectiveTab === 'hr-anomalies' && <AttendanceAudit />}
+
+            {effectiveTab === 'hr-payroll' && <PayrollManagement />}
+          </Suspense>
         </main>
       </div>
     </div>

@@ -7,6 +7,14 @@ export interface User {
   phone?: string | null
   roles: Role[]
   avatar_url?: string | null
+  employee?: {
+    id: number
+    employee_code?: string
+    full_name?: string
+    department?: Department | null
+    job_position?: JobPosition | null
+    branch?: Branch | null
+  } | null
 }
 
 export interface Department {

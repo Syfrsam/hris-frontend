@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import {
   AlertCircleIcon,
   CheckmarkCircle01Icon,
-  CompassIcon,
   Location01Icon,
   Login01Icon,
   Logout01Icon,
@@ -194,16 +193,6 @@ export const AttendanceWidget: React.FC = () => {
     }
   }
 
-  const simulateHqLocation = () => {
-    setUserCoords({ lat: officeLat, lng: officeLng })
-    setDistance(0)
-    setGeoError(null)
-    setActionMessage({
-      text: `Lokasi disimulasikan di ${activeBranch?.name || 'Kantor Pusat'}.`,
-      type: 'success',
-    })
-  }
-
   const isWithinRadius = distance !== null && distance <= maxRadius
 
   const clockInDisplay = getClockTimeString(attendance?.clock_in)
@@ -267,17 +256,7 @@ export const AttendanceWidget: React.FC = () => {
             className="rounded-lg text-xs h-8 font-normal"
           >
             <Icon icon={RefreshIcon} size={13} className={isLocating ? 'animate-spin' : ''} />
-            <span>{isLocating ? 'Cek...' : 'Cek GPS'}</span>
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={simulateHqLocation}
-            className="rounded-lg text-xs h-8 font-medium"
-          >
-            <Icon icon={CompassIcon} size={13} />
-            <span>Simulasi (0m)</span>
+            <span>{isLocating ? 'Memindai...' : 'Perbarui Lokasi GPS'}</span>
           </Button>
         </div>
       </div>
@@ -285,7 +264,7 @@ export const AttendanceWidget: React.FC = () => {
       {geoError && (
         <div className="mb-4 p-2.5 rounded-lg bg-secondary/20 border border-secondary/40 text-foreground text-xs flex items-center space-x-2 font-normal">
           <Icon icon={AlertCircleIcon} size={14} className="shrink-0 text-foreground" />
-          <span>{geoError} Gunakan &quot;Simulasi (0m)&quot; untuk uji absensi.</span>
+          <span>{geoError} Pastikan izin akses lokasi pada browser telah diaktifkan.</span>
         </div>
       )}
 

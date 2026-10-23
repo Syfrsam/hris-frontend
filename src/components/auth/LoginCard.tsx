@@ -2,11 +2,10 @@ import React, { useState } from 'react'
 import { Building01Icon, AlertCircleIcon } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
 import { useAuth } from '../../context/AuthContext'
-import type { Role } from '../../types'
 import heroLoginImg from '../../assets/hero-login.webp'
 
 export const LoginCard: React.FC = () => {
-  const { login, demoLogin, isLoading } = useAuth()
+  const { login, isLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
@@ -22,20 +21,10 @@ export const LoginCard: React.FC = () => {
     }
   }
 
-  const handleQuickLogin = async (role: Role) => {
-    setError(null)
-    try {
-      await demoLogin(role)
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal masuk akun demo.')
-    }
-  }
-
   return (
     <div className="h-screen h-[100dvh] w-full flex flex-col md:flex-row bg-card font-sans overflow-hidden">
-      {/* Kolom Kiri: Hero Visual (Banner ringkas di mobile, full panel di desktop) */}
+      {/* Kolom Kiri: Hero Visual */}
       <div className="w-full md:w-1/2 h-20 sm:h-24 md:h-full relative bg-[#1358D0] overflow-hidden flex md:flex-col justify-between p-4 sm:p-6 md:p-12 lg:p-16 shrink-0">
-        {/* Mockup Preview dari hero-login.webp */}
         <img
           src={heroLoginImg}
           alt="HRIS Preview"
@@ -50,7 +39,7 @@ export const LoginCard: React.FC = () => {
             </div>
             <div>
               <h2 className="text-xs sm:text-sm font-semibold text-white tracking-tight leading-tight">
-                Designed for <span className="text-[#FFF250]">Individuals</span>
+                HRIS <span className="text-[#FFF250]">Enterprise</span>
               </h2>
               <p className="text-white/80 text-[10px] font-normal line-clamp-1">
                 Presensi GPS, cuti & payroll terpadu
@@ -77,7 +66,6 @@ export const LoginCard: React.FC = () => {
             Presensi GPS, manajemen cuti, dan payroll dalam satu sistem terpadu.
           </p>
 
-          {/* Indikator Slider */}
           <div className="flex items-center space-x-1.5 mt-4">
             <span className="w-5 h-1.5 rounded-full bg-[#FFF250]" />
             <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
@@ -85,53 +73,54 @@ export const LoginCard: React.FC = () => {
           </div>
         </div>
 
-        {/* Spacer bawah desktop agar mockup aplikasi tetap terlihat */}
         <div className="hidden md:block relative z-10 h-28 sm:h-36 md:h-44 pointer-events-none" />
       </div>
 
-      {/* Kolom Kanan: Form Login Bersih (Pas 100% tanpa scroll di mobile maupun desktop) */}
+      {/* Kolom Kanan: Form Login */}
       <div className="flex-1 w-full md:w-1/2 md:h-full bg-card flex flex-col justify-center px-5 sm:px-10 md:px-12 lg:px-20 py-4 sm:py-6 overflow-hidden">
         <div className="max-w-sm w-full mx-auto">
           <h1 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
             Masuk Akun
           </h1>
-          <p className="text-[11px] sm:text-xs text-muted-foreground font-normal mt-0.5 mb-3 sm:mb-4">
-            Silakan masuk ke sistem HRIS Enterprise.
+          <p className="text-[11px] sm:text-xs text-muted-foreground font-normal mt-0.5 mb-4">
+            Silakan masuk menggunakan kredensial akun HRIS Enterprise Anda.
           </p>
 
           {error && (
-            <div className="mb-3 p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-start space-x-1.5 font-normal">
+            <div className="mb-3 p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-start space-x-2 font-normal">
               <Icon icon={AlertCircleIcon} size={14} className="shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleManualSubmit} className="space-y-2.5 sm:space-y-3">
+          <form onSubmit={handleManualSubmit} className="space-y-3.5">
             <div>
               <label className="block text-[11px] sm:text-xs font-medium text-foreground mb-1">
-                Email
+                Email Perusahaan
               </label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@email.com"
-                className="w-full h-9 sm:h-10 px-3 rounded-lg border border-border bg-background text-xs font-normal text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                placeholder="nama@perusahaan.com"
+                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-xs font-normal text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-[11px] sm:text-xs font-medium text-foreground">
-                  Password
+                  Kata Sandi
                 </label>
                 <button
                   type="button"
-                  onClick={() => setError('Hubungi Administrator HR untuk reset password akun Anda.')}
-                  className="text-[10px] sm:text-[11px] font-normal text-primary hover:underline transition-colors"
+                  onClick={() =>
+                    setError('Hubungi Superadmin atau Administrator HR untuk mengatur ulang kata sandi akun Anda.')
+                  }
+                  className="text-[10px] sm:text-[11px] font-normal text-primary hover:underline transition-colors cursor-pointer"
                 >
-                  Lupa Password?
+                  Lupa Kata Sandi?
                 </button>
               </div>
               <input
@@ -140,7 +129,7 @@ export const LoginCard: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full h-9 sm:h-10 px-3 rounded-lg border border-border bg-background text-xs font-normal text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-xs font-normal text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
               />
             </div>
 
@@ -153,7 +142,7 @@ export const LoginCard: React.FC = () => {
                   className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary accent-[#1358D0]"
                 />
                 <span className="text-[11px] sm:text-xs text-muted-foreground font-normal">
-                  Ingat saya
+                  Ingat sesi saya
                 </span>
               </label>
             </div>
@@ -161,43 +150,24 @@ export const LoginCard: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-9 sm:h-10 bg-primary hover:bg-primary/95 text-white font-medium rounded-lg text-xs transition-all shadow-xs disabled:opacity-50 flex items-center justify-center mt-1 cursor-pointer"
+              className="w-full h-10 bg-primary hover:bg-primary/95 text-white font-medium rounded-lg text-xs transition-all shadow-xs disabled:opacity-50 flex items-center justify-center mt-1 cursor-pointer"
             >
-              {isLoading ? 'Memproses...' : 'Masuk'}
+              {isLoading ? 'Memverifikasi...' : 'Masuk ke Portal'}
             </button>
 
-            <div className="text-center text-[10px] sm:text-[11px] text-muted-foreground font-normal mt-2">
+            <div className="text-center text-[10px] sm:text-[11px] text-muted-foreground font-normal pt-2">
               Belum memiliki akun?{' '}
               <button
                 type="button"
-                onClick={() => handleQuickLogin('Employee')}
-                className="text-primary hover:underline font-medium"
+                onClick={() =>
+                  setError('Pendaftaran akun dikelola secara terpusat oleh Superadmin dan Divisi HR.')
+                }
+                className="text-primary hover:underline font-medium cursor-pointer"
               >
-                Hubungi HR
+                Hubungi Administrator
               </button>
             </div>
           </form>
-
-          {/* Akses Cepat Demo */}
-          <div className="mt-3.5 pt-2.5 border-t border-border">
-            <div className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center justify-between">
-              <span>Akses Cepat Demo</span>
-              <span className="text-[10px] text-primary font-normal">1-Klik Masuk</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-              {(['Employee', 'Manager', 'HR Staff', 'HR Manager'] as Role[]).map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => handleQuickLogin(role)}
-                  className="py-1 px-1.5 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary text-foreground text-[10px] sm:text-xs font-normal border border-border text-center truncate transition-colors cursor-pointer"
-                >
-                  {role.replace('Manager', 'Mgr')}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -14,12 +14,14 @@ import {
   Settings01Icon,
   Logout01Icon,
   Cancel01Icon,
+  SecurityCheckIcon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
 import { useAuth } from '../../context/AuthContext'
 import { Badge } from '../ui/badge'
 
 export type TabKey =
+  | 'superadmin-users'
   | 'attendance'
   | 'leaves'
   | 'overtime'
@@ -48,13 +50,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { user, logout } = useAuth()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
-  const isManager = user?.roles?.some((r) =>
-    ['Manager', 'HR Manager', 'Superadmin'].includes(r)
-  )
+  const isSuperadmin = Boolean(user?.roles?.includes('Superadmin'))
 
-  const isHr = user?.roles?.some((r) =>
-    ['HR Staff', 'HR Manager', 'Superadmin'].includes(r)
-  )
+  const isManager =
+    isSuperadmin ||
+    Boolean(user?.roles?.some((r) => ['Manager', 'HR Manager'].includes(r)))
+
+  const isHr =
+    isSuperadmin ||
+    Boolean(user?.roles?.some((r) => ['HR Staff', 'HR Manager'].includes(r)))
 
   const essMenuItems: { id: TabKey; label: string; icon: any }[] = [
     {
@@ -125,86 +129,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const renderNavContent = () => (
     <>
-      <div className="space-y-2">
-        {/* ESS Menu Section */}
-        <div>
-          <div className="text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider px-3 mb-1">
-            Mandiri Karyawan (ESS)
-          </div>
-          <nav className="space-y-0.5">
-            {essMenuItems.map((item) => {
-              const isActive = activeTab === item.id
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleTabClick(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-[8px] text-[13px] transition-all ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground font-normal shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 font-normal'
-                  }`}
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <Icon icon={item.icon} size={16} />
-                    <span>{item.label}</span>
-                  </div>
-                </button>
-              )
-            })}
-          </nav>
-        </div>
-
-        {/* Manager Section */}
-        {isManager && (
-          <div className="pt-2 border-t border-border">
-            <div className="text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider px-3 mb-1">
-              Portal Manajer Tim
+      <div className="space-y-3">
+        {/* Superadmin Exclusive Governance Section */}
+        {isSuperadmin && (
+          <div>
+            <div className="text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider px-3 mb-1.5 flex items-center justify-between">
+              <span>Otoritas Superadmin</span>
+              <Badge variant="secondary" className="text-[9px] font-semibold px-1.5 py-0.5">
+                Master RBAC
+              </Badge>
             </div>
             <nav className="space-y-0.5">
               <button
                 type="button"
-                onClick={() => handleTabClick('team-attendance')}
-                className={`w-full flex items-center justify-between px-3 py-1.5 rounded-[8px] text-[13px] transition-all ${
-                  activeTab === 'team-attendance'
-                    ? 'bg-primary text-primary-foreground font-normal shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 font-normal'
+                onClick={() => handleTabClick('superadmin-users')}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] transition-all cursor-pointer ${
+                  activeTab === 'superadmin-users'
+                    ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
                 }`}
               >
                 <div className="flex items-center space-x-2.5">
-                  <Icon icon={UserGroupIcon} size={16} />
-                  <span>Presensi Tim</span>
+                  <Icon icon={SecurityCheckIcon} size={16} />
+                  <span>Kelola User & Role</span>
                 </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleTabClick('approvals')}
-                className={`w-full flex items-center justify-between px-3 py-1.5 rounded-[8px] text-[13px] transition-all ${
-                  activeTab === 'approvals'
-                    ? 'bg-primary text-primary-foreground font-normal shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 font-normal'
-                }`}
-              >
-                <div className="flex items-center space-x-2.5">
-                  <Icon icon={CheckmarkCircle01Icon} size={16} />
-                  <span>Persetujuan Tim</span>
-                </div>
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0.2 font-normal">
-                  Review
+                <Badge
+                  variant={activeTab === 'superadmin-users' ? 'secondary' : 'outline'}
+                  className="text-[9px] px-1.5 py-0.5 font-semibold"
+                >
+                  Admin
                 </Badge>
               </button>
             </nav>
           </div>
         )}
 
-        {/* HR Section */}
+        {/* HR Administration Section */}
         {isHr && (
-          <div className="pt-2 border-t border-border">
-            <div className="text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider px-3 mb-1 flex items-center justify-between">
+          <div className={isSuperadmin ? 'pt-2.5 border-t border-border' : ''}>
+            <div className="text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider px-3 mb-1.5 flex items-center justify-between">
               <span>Administrasi HR</span>
-              <Badge variant="primarySubtle" className="text-[9px] font-normal px-1.5 py-0.2">
-                {user?.roles?.[0]}
+              <Badge variant="primarySubtle" className="text-[9px] font-medium px-1.5 py-0.5">
+                {isSuperadmin ? 'HR Full Access' : user?.roles?.[0]}
               </Badge>
             </div>
             <nav className="space-y-0.5">
@@ -215,10 +181,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     key={item.id}
                     type="button"
                     onClick={() => handleTabClick(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded-[8px] text-[13px] transition-all ${
+                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[13px] transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-primary text-primary-foreground font-normal shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 font-normal'
+                        ? 'bg-primary text-primary-foreground font-medium shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
                     }`}
                   >
                     <div className="flex items-center space-x-2.5">
@@ -231,6 +197,78 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </nav>
           </div>
         )}
+
+        {/* Manager Section */}
+        {isManager && (
+          <div className="pt-2.5 border-t border-border">
+            <div className="text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider px-3 mb-1.5">
+              Portal Manajer Tim
+            </div>
+            <nav className="space-y-0.5">
+              <button
+                type="button"
+                onClick={() => handleTabClick('team-attendance')}
+                className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[13px] transition-all cursor-pointer ${
+                  activeTab === 'team-attendance'
+                    ? 'bg-primary text-primary-foreground font-medium shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
+                }`}
+              >
+                <div className="flex items-center space-x-2.5">
+                  <Icon icon={UserGroupIcon} size={16} />
+                  <span>Presensi Tim</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleTabClick('approvals')}
+                className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[13px] transition-all cursor-pointer ${
+                  activeTab === 'approvals'
+                    ? 'bg-primary text-primary-foreground font-medium shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
+                }`}
+              >
+                <div className="flex items-center space-x-2.5">
+                  <Icon icon={CheckmarkCircle01Icon} size={16} />
+                  <span>Persetujuan Tim</span>
+                </div>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 font-semibold">
+                  Review
+                </Badge>
+              </button>
+            </nav>
+          </div>
+        )}
+
+        {/* ESS Menu Section */}
+        <div className="pt-2.5 border-t border-border">
+          <div className="text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider px-3 mb-1.5">
+            Mandiri Karyawan (ESS)
+          </div>
+          <nav className="space-y-0.5">
+            {essMenuItems.map((item) => {
+              const isActive = activeTab === item.id
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleTabClick(item.id)}
+                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[13px] transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground font-medium shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <Icon icon={item.icon} size={16} />
+                    <span>{item.label}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </nav>
+        </div>
       </div>
 
       {/* Settings & Logout */}
@@ -239,7 +277,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={handleSettingsClick}
-            className="w-full flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[13px] font-normal text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            className="w-full flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[13px] font-normal text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
           >
             <Icon icon={Settings01Icon} size={16} />
             <span>Pengaturan</span>
@@ -249,7 +287,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={() => setShowLogoutConfirm(true)}
-          className="w-full flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[13px] font-normal text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-500/15 transition-colors"
+          className="w-full flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] text-[13px] font-normal text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-500/15 transition-colors cursor-pointer"
         >
           <Icon icon={Logout01Icon} size={16} className="text-rose-600 dark:text-rose-400" />
           <span>Keluar</span>
@@ -260,7 +298,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Desktop Sidebar: 100% viewport fit, sticky below navbar, zero scroll needed */}
+      {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-60 lg:w-64 bg-card border-r border-border px-3 py-2.5 flex-col justify-between shrink-0 transition-colors md:sticky md:top-16 md:h-[calc(100vh-4rem)] overflow-y-auto">
         {renderNavContent()}
       </aside>
@@ -339,14 +377,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 type="button"
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 px-3.5 py-2 rounded-xl border border-border text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                className="flex-1 px-3.5 py-2 rounded-xl border border-border text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleConfirmLogout}
-                className="flex-1 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium transition-colors shadow-xs"
+                className="flex-1 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium transition-colors shadow-xs cursor-pointer"
               >
                 Ya, Keluar
               </button>
