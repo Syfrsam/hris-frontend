@@ -58,8 +58,6 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const isError = t.type === 'error'
           const isWarning = t.type === 'warning'
 
-          const bgColor = 'bg-brand-dark/95 border-border text-white'
-
           const icon = isSuccess
             ? CheckmarkCircle01Icon
             : isError
@@ -68,26 +66,38 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             ? AlertCircleIcon
             : InformationCircleIcon
 
-          const iconColor = isSuccess
-            ? 'text-primary'
+          const statusStyles = isSuccess
+            ? {
+                badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+                border: 'border-l-4 border-l-emerald-500',
+              }
             : isError
-            ? 'text-secondary'
+            ? {
+                badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+                border: 'border-l-4 border-l-rose-500',
+              }
             : isWarning
-            ? 'text-secondary'
-            : 'text-primary'
+            ? {
+                badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+                border: 'border-l-4 border-l-amber-500',
+              }
+            : {
+                badge: 'bg-primary/10 text-primary border-primary/20',
+                border: 'border-l-4 border-l-primary',
+              }
 
           return (
             <div
               key={t.id}
-              className={`pointer-events-auto p-4 rounded-2xl border shadow-xl backdrop-blur-md flex items-start space-x-3 transition-all duration-300 ${bgColor}`}
+              className={`pointer-events-auto p-3.5 rounded-xl border border-border bg-card/98 text-foreground shadow-lg shadow-black/5 backdrop-blur-md flex items-start space-x-3 transition-all duration-300 ${statusStyles.border}`}
             >
-              <div className="shrink-0 mt-0.5">
-                <Icon icon={icon} size={22} className={iconColor} />
+              <div className={`shrink-0 p-1 rounded-lg border flex items-center justify-center ${statusStyles.badge}`}>
+                <Icon icon={icon} size={16} />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium tracking-tight">{t.title}</div>
+              <div className="flex-1 min-w-0 pt-0.5">
+                <div className="text-xs font-semibold text-foreground tracking-tight">{t.title}</div>
                 {t.message && (
-                  <p className="text-xs mt-0.5 opacity-90 leading-relaxed break-words">
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed break-words font-normal">
                     {t.message}
                   </p>
                 )}
@@ -95,9 +105,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               <button
                 type="button"
                 onClick={() => removeToast(t.id)}
-                className="shrink-0 text-slate-400 hover:text-white transition-colors p-1"
+                className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md p-1 transition-colors cursor-pointer"
+                aria-label="Tutup notifikasi"
               >
-                <Icon icon={Cancel01Icon} size={16} />
+                <Icon icon={Cancel01Icon} size={14} />
               </button>
             </div>
           )

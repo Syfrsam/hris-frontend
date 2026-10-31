@@ -126,6 +126,9 @@ export const UserRoleManagement: React.FC = () => {
         setUsers(res.data.data.users || [])
       }
     } catch (err: any) {
+      if (err.response?.status === 401) {
+        return
+      }
       const msg = err.response?.data?.message || 'Gagal memuat daftar pengguna.'
       setErrorMsg(msg)
       toast.error('Gagal Memuat Data', msg)

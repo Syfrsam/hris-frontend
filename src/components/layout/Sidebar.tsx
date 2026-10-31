@@ -19,6 +19,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import { Badge } from '../ui/badge'
 
 export type TabKey =
@@ -52,6 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
 }) => {
   const { user, logout } = useAuth()
+  const { toast } = useToast()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const isSuperadmin = Boolean(user?.roles?.includes('Superadmin'))
@@ -127,11 +129,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navigate = useNavigate()
 
-  const handleConfirmLogout = () => {
+  const handleConfirmLogout = async () => {
     setShowLogoutConfirm(false)
     if (onClose) onClose()
-    logout()
-    navigate('/')
+    navigate('/login', { replace: true })
+    try {
+      await logout()
+    } finally {
+      toast.success(
+        'Berhasil Keluar',
+        'Anda telah berhasil keluar dari akun HRIS Enterprise.'
+      )
+    }
   }
 
   const renderMenuItems = () => (

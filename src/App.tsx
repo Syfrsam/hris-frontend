@@ -142,7 +142,7 @@ export const ROUTE_TO_TAB: Record<string, TabKey> = {
 }
 
 const MainDashboard: React.FC = () => {
-  const { user, token } = useAuth()
+  const { user, token, isLoading } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -159,8 +159,23 @@ const MainDashboard: React.FC = () => {
     ? '/dashboard-hr'
     : '/presensi'
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
   if (!token || !user) {
+    if (location.pathname !== '/login') {
+      return <Navigate to="/login" replace />
+    }
     return <LoginCard />
+  }
+
+  if (location.pathname === '/login') {
+    return <Navigate to={defaultRoute} replace />
   }
 
   const currentTab: TabKey = ROUTE_TO_TAB[location.pathname] || (
