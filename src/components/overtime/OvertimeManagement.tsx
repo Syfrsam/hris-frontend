@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import {
   AlertCircleIcon,
   Cancel01Icon,
   CheckmarkCircle01Icon,
+  Clock01Icon,
   PlusSignIcon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
+import { Pagination } from '../common/Pagination'
+import { Skeleton } from '../ui/skeleton'
 import { overtimeService } from '../../services/api'
 import type { OvertimeRequest } from '../../types'
 
@@ -13,6 +16,8 @@ export const OvertimeManagement: React.FC = () => {
   const [requests, setRequests] = useState<OvertimeRequest[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [pageSize, setPageSize] = useState<number>(10)
 
   // Form states
   const [date, setDate] = useState<string>('')
@@ -23,6 +28,31 @@ export const OvertimeManagement: React.FC = () => {
   const [formError, setFormError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  const handleDurationChange = (newHours: number) => {
+    setDurationHours(newHours)
+    if (startTime) {
+      const [h, m] = startTime.split(':').map(Number)
+      const totalMinutes = h * 60 + m + Math.round(newHours * 60)
+      const endH = Math.floor(totalMinutes / 60) % 24
+      const endM = totalMinutes % 60
+      const formatted = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`
+      setEndTime(formatted)
+    }
+  }
+
+  const handleTimeChange = (newStart: string, newEnd: string) => {
+    setStartTime(newStart)
+    setEndTime(newEnd)
+    if (newStart && newEnd) {
+      const [sh, sm] = newStart.split(':').map(Number)
+      const [eh, em] = newEnd.split(':').map(Number)
+      let diffMinutes = (eh * 60 + em) - (sh * 60 + sm)
+      if (diffMinutes < 0) diffMinutes += 24 * 60
+      const hours = Math.min(4.0, Math.max(0.5, Math.round((diffMinutes / 60) * 2) / 2))
+      setDurationHours(hours)
+    }
+  }
 
   const fetchOvertimes = async () => {
     setIsLoading(true)
@@ -39,6 +69,11 @@ export const OvertimeManagement: React.FC = () => {
   useEffect(() => {
     fetchOvertimes()
   }, [])
+
+  const paginatedRequests = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return requests.slice(start, start + pageSize)
+  }, [requests, currentPage, pageSize])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -94,7 +129,7 @@ export const OvertimeManagement: React.FC = () => {
             setFormError(null)
             setIsModalOpen(true)
           }}
-          className="px-3.5 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs flex items-center space-x-1.5 shadow-xs transition-colors"
+          className="px-3.5 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs flex items-center space-x-1.5 shadow-xs transition-colors shrink-0"
         >
           <Icon icon={PlusSignIcon} size={15} />
           <span>Ajukan Lembur</span>
@@ -113,19 +148,66 @@ export const OvertimeManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Overtime Info Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-4">
-        <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/15">
-          <div className="text-[11px] font-medium text-primary uppercase tracking-wide">Formula Upah Lembur Depnaker</div>
-          <div className="text-xs font-normal text-foreground mt-1">
-            Jam Pertama: 1.5x upah per jam • Jam Berikutnya: 2.0x upah per jam
+      {/* Formula Upah Lembur & Legalitas K3 Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 my-4">
+        {/* Card Formula */}
+        <div className="md:col-span-7 p-4 rounded-xl bg-card border border-border shadow-xs space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1.5 text-primary font-medium text-xs">
+              <Icon icon={Clock01Icon} size={14} />
+              <span className="uppercase tracking-wider">Formula Upah Lembur</span>
+            </div>
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+              PP No. 35/2021
+            </span>
           </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-2.5 rounded-lg bg-muted/40 border border-border">
+              <div className="text-[10px] text-muted-foreground font-normal">Jam Pertama (Ke-1)</div>
+              <div className="text-sm font-semibold text-foreground mt-0.5">
+                1.5× <span className="text-xs font-normal text-muted-foreground">Upah / Jam</span>
+              </div>
+            </div>
+            <div className="p-2.5 rounded-lg bg-muted/40 border border-border">
+              <div className="text-[10px] text-muted-foreground font-normal">Jam Berikutnya (Ke-2 s/d 4)</div>
+              <div className="text-sm font-semibold text-primary mt-0.5">
+                2.0× <span className="text-xs font-normal text-muted-foreground">Upah / Jam</span>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground font-normal leading-relaxed">
+            Tarif upah lembur per jam dihitung dengan standar Depnaker: <code className="font-semibold text-foreground">1/173 × Gaji Pokok Sebulan</code>.
+          </p>
         </div>
-        <div className="p-3.5 rounded-xl bg-secondary/20 border border-secondary/40">
-          <div className="text-[11px] font-medium text-foreground uppercase tracking-wide">Batas Legalitas</div>
-          <div className="text-xs font-normal text-foreground mt-1">
-            Maksimal 4.0 jam per hari kerja untuk menjaga produktivitas & kesehatan karyawan
+
+        {/* Card Batas Legalitas */}
+        <div className="md:col-span-5 p-4 rounded-xl bg-card border border-border shadow-xs flex flex-col justify-between space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1.5 text-amber-600 dark:text-amber-400 font-medium text-xs">
+              <Icon icon={AlertCircleIcon} size={14} />
+              <span className="uppercase tracking-wider">Batas Legalitas K3</span>
+            </div>
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              Maks. 4 Jam/Hari
+            </span>
           </div>
+
+          <div className="space-y-1 text-xs text-foreground font-normal">
+            <div className="flex items-center space-x-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              <span>Maksimal <strong>4.0 jam per hari</strong> kerja</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              <span>Maksimal <strong>18 jam per minggu</strong></span>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground font-normal leading-relaxed">
+            Wajib melalui approval Line Manager & HR Manager sebelum masuk ke slip gaji.
+          </p>
         </div>
       </div>
 
@@ -145,11 +227,17 @@ export const OvertimeManagement: React.FC = () => {
           </thead>
           <tbody className="divide-y divide-border">
             {isLoading ? (
-              <tr>
-                <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
-                  Memuat data lembur...
-                </td>
-              </tr>
+              [1, 2, 3, 4, 5].map((i) => (
+                <tr key={i} className="animate-pulse">
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-20" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-28" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-16" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-36" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-5 w-16 rounded-md" /></td>
+                </tr>
+              ))
             ) : requests.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
@@ -157,7 +245,7 @@ export const OvertimeManagement: React.FC = () => {
                 </td>
               </tr>
             ) : (
-              requests.map((r) => (
+              paginatedRequests.map((r) => (
                 <tr key={r.id} className="hover:bg-muted/40 transition-colors">
                   <td className="py-2.5 px-3 text-xs font-normal text-primary">
                     {r.request_number}
@@ -196,6 +284,17 @@ export const OvertimeManagement: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalItems={requests.length}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(newSize) => {
+          setPageSize(newSize)
+          setCurrentPage(1)
+        }}
+      />
 
       {/* Modal Form Overtime */}
       {isModalOpen && (
@@ -244,7 +343,7 @@ export const OvertimeManagement: React.FC = () => {
                     type="time"
                     required
                     value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
+                    onChange={(e) => handleTimeChange(e.target.value, endTime)}
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary font-normal"
                   />
                 </div>
@@ -256,7 +355,7 @@ export const OvertimeManagement: React.FC = () => {
                     type="time"
                     required
                     value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
+                    onChange={(e) => handleTimeChange(startTime, e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary font-normal"
                   />
                 </div>
@@ -264,18 +363,22 @@ export const OvertimeManagement: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-normal text-muted-foreground uppercase mb-1">
-                  Durasi Lembur (Jam, Maksimal 4.0)
+                  Durasi Lembur (Pilih Jam)
                 </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0.5"
-                  max="4.0"
-                  required
+                <select
                   value={durationHours}
-                  onChange={(e) => setDurationHours(parseFloat(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary font-normal"
-                />
+                  onChange={(e) => handleDurationChange(parseFloat(e.target.value))}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary font-normal cursor-pointer"
+                >
+                  <option value={0.5}>0.5 Jam (30 Menit)</option>
+                  <option value={1.0}>1.0 Jam (60 Menit)</option>
+                  <option value={1.5}>1.5 Jam (90 Menit)</option>
+                  <option value={2.0}>2.0 Jam (120 Menit)</option>
+                  <option value={2.5}>2.5 Jam (150 Menit)</option>
+                  <option value={3.0}>3.0 Jam (180 Menit)</option>
+                  <option value={3.5}>3.5 Jam (210 Menit)</option>
+                  <option value={4.0}>4.0 Jam (Maksimal Depnaker)</option>
+                </select>
               </div>
 
               <div>

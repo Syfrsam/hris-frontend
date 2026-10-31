@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Cancel01Icon, Download01Icon, ViewIcon } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
-import { payrollService } from '../../services/api'
+import { Pagination } from '../common/Pagination'
+import { payrollService, API_BASE_URL } from '../../services/api'
 import type { Payroll } from '../../types'
 
 export const PayslipViewer: React.FC = () => {
@@ -9,6 +10,13 @@ export const PayslipViewer: React.FC = () => {
   const [selectedSlip, setSelectedSlip] = useState<Payroll | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isDownloading, setIsDownloading] = useState<number | null>(null)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [pageSize, setPageSize] = useState<number>(10)
+
+  const paginatedPayslips = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return payslips.slice(start, start + pageSize)
+  }, [payslips, currentPage, pageSize])
 
   const fetchPayslips = async () => {
     setIsLoading(true)
@@ -37,13 +45,23 @@ export const PayslipViewer: React.FC = () => {
       a.download = `Slip_Gaji_${payroll.payslip_number}.pdf`
       document.body.appendChild(a)
       a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      setTimeout(() => {
+        if (a.parentNode) a.parentNode.removeChild(a)
+        window.URL.revokeObjectURL(url)
+      }, 1000)
     } catch {
-      alert('Gagal mengunduh dokumen slip gaji PDF.')
+      const token = localStorage.getItem('hris_token') || ''
+      const downloadUrl = `${API_BASE_URL}/payrolls/${payroll.id}/download?token=${encodeURIComponent(token)}`
+      window.open(downloadUrl, '_blank')
     } finally {
       setIsDownloading(null)
     }
+  }
+
+  const handleViewPdf = (payrollId: number) => {
+    const token = localStorage.getItem('hris_token') || ''
+    const viewUrl = `${API_BASE_URL}/payrolls/${payrollId}/download?mode=view&token=${encodeURIComponent(token)}`
+    window.open(viewUrl, '_blank')
   }
 
   const formatRupiah = (num: number | undefined) => {
@@ -99,7 +117,7 @@ export const PayslipViewer: React.FC = () => {
                 </td>
               </tr>
             ) : (
-              payslips.map((p) => (
+              paginatedPayslips.map((p) => (
                 <tr key={p.id} className="hover:bg-muted/40 transition-colors">
                   <td className="py-2.5 px-3 text-xs font-normal text-primary">
                     {p.payslip_number}
@@ -142,6 +160,17 @@ export const PayslipViewer: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalItems={payslips.length}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(newSize) => {
+          setPageSize(newSize)
+          setCurrentPage(1)
+        }}
+      />
 
       {/* Breakdown Modal */}
       {selectedSlip && (
@@ -232,14 +261,25 @@ export const PayslipViewer: React.FC = () => {
                     {formatRupiah(getNetSalary(selectedSlip))}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleDownloadPdf(selectedSlip)}
-                  className="px-3 py-1.5 rounded-lg bg-card text-foreground font-medium text-xs hover:bg-muted transition-colors inline-flex items-center space-x-1.5 border border-border"
-                >
-                  <Icon icon={Download01Icon} size={14} />
-                  <span>Unduh PDF</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => handleViewPdf(selectedSlip.id)}
+                    className="px-3 py-1.5 rounded-lg bg-card text-foreground font-medium text-xs hover:bg-muted transition-colors inline-flex items-center space-x-1.5 border border-border cursor-pointer"
+                  >
+                    <Icon icon={ViewIcon} size={14} />
+                    <span>Lihat</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadPdf(selectedSlip)}
+                    disabled={isDownloading === selectedSlip.id}
+                    className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium text-xs hover:bg-primary/90 transition-colors inline-flex items-center space-x-1.5 border border-primary/20 cursor-pointer"
+                  >
+                    <Icon icon={Download01Icon} size={14} />
+                    <span>{isDownloading === selectedSlip.id ? 'Mengunduh...' : 'Unduh PDF'}</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

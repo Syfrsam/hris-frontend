@@ -80,6 +80,23 @@ export const authService = {
     api.post('/auth/login', credentials),
   getMe: () => api.get('/auth/me'),
   logout: () => api.post('/auth/logout'),
+  updateAvatar: (formData: FormData) =>
+    api.post('/auth/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  updateProfile: (data: FormData | { name: string; email: string; phone?: string }) => {
+    if (data instanceof FormData) {
+      return api.post('/auth/profile', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    return api.put('/auth/profile', data)
+  },
+  updatePassword: (data: {
+    current_password: string
+    password: string
+    password_confirmation: string
+  }) => api.put('/auth/password', data),
 }
 
 export const branchService = {
@@ -112,6 +129,10 @@ export const attendanceService = {
 
 export const leaveService = {
   getTypes: () => api.get('/leaves/types'),
+  getAllTypes: () => api.get('/leaves/types/all'),
+  createType: (data: any) => api.post('/leaves/types', data),
+  updateType: (id: number, data: any) => api.put(`/leaves/types/${id}`, data),
+  deleteType: (id: number) => api.delete(`/leaves/types/${id}`),
   getBalances: () => api.get('/leaves/balances'),
   getMyLeaves: () => api.get('/leaves'),
   applyLeave: (formData: FormData) =>
@@ -151,19 +172,42 @@ export const payrollService = {
     api.get(`/payrolls/${id}/download`, { responseType: 'blob' }),
 }
 
+export const employeeService = {
+  getNextNik: () => api.get('/employees/next-nik'),
+  getEmployees: (query?: string) => api.get(`/employees${query ? `?${query}` : ''}`),
+  getEmployee: (id: number) => api.get(`/employees/${id}`),
+  createEmployee: (data: FormData | Record<string, any>) =>
+    api.post('/employees', data, {
+      headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    }),
+  updateEmployee: (id: number, data: FormData | Record<string, any>) => {
+    if (data instanceof FormData) {
+      if (!data.has('_method')) data.append('_method', 'PUT')
+      return api.post(`/employees/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    return api.put(`/employees/${id}`, data)
+  },
+  deleteEmployee: (id: number) => api.delete(`/employees/${id}`),
+}
+
 export const userService = {
   getUsers: () => api.get('/users'),
-  createUser: (data: {
+  createUser: (data: FormData | {
     name: string
     email: string
     phone?: string
     password: string
     role: string
     is_active?: boolean
-  }) => api.post('/users', data),
+  }) =>
+    api.post('/users', data, {
+      headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    }),
   updateUser: (
     id: number,
-    data: {
+    data: FormData | {
       name?: string
       email?: string
       phone?: string | null
@@ -171,7 +215,30 @@ export const userService = {
       role?: string
       is_active?: boolean
     }
-  ) => api.put(`/users/${id}`, data),
+  ) => {
+    if (data instanceof FormData) {
+      if (!data.has('_method')) data.append('_method', 'PUT')
+      return api.post(`/users/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    return api.put(`/users/${id}`, data)
+  },
+}
+
+export const penaltyService = {
+  getSettings: () => api.get('/settings/penalty'),
+  updateSettings: (data: {
+    late_penalty_type: 'hourly_rate' | 'salary_proportional' | 'fixed_per_incident' | 'none'
+    hourly_rate: number
+    incident_rate?: number
+    grace_period_minutes: number
+    absent_penalty_type: 'salary_proportional' | 'fixed_daily'
+    absent_daily_amount?: number
+    is_active: boolean
+    notes?: string
+    recalculate_active_draft?: boolean
+  }) => api.put('/settings/penalty', data),
 }
 
 export default api

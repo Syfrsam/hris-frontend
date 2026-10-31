@@ -96,7 +96,7 @@ export interface Attendance {
   clock_out: ClockDetails | string | null
   clock_in_latitude?: number | null
   clock_in_longitude?: number | null
-  status: 'present' | 'late' | 'half_day' | 'absent'
+  status: 'present' | 'on_time' | 'late' | 'early_leave' | 'half_day' | 'absent'
   late_minutes: number
   work_duration_minutes: number
   shift?: Shift
@@ -108,8 +108,10 @@ export interface LeaveType {
   name: string
   code: string
   default_quota: number
+  deduct_quota?: boolean
   requires_attachment: boolean
   min_notice_days: number
+  is_active?: boolean
 }
 
 export interface LeaveBalance {
@@ -144,6 +146,7 @@ export interface LeaveRequest {
   total_days: number
   reason: string
   attachment_path?: string | null
+  attachment_url?: string | null
   status: 'pending' | 'approved' | 'rejected'
   current_step: 'manager' | 'hr'
   leave_type?: LeaveType
@@ -222,3 +225,22 @@ export interface ToastMessage {
   title: string
   message?: string
 }
+
+export interface PenaltySetting {
+  id: number
+  late_penalty_type: 'hourly_rate' | 'salary_proportional' | 'fixed_per_incident' | 'none'
+  hourly_rate: number
+  incident_rate: number
+  grace_period_minutes: number
+  absent_penalty_type: 'salary_proportional' | 'fixed_daily'
+  absent_daily_amount: number
+  is_active: boolean
+  notes?: string | null
+  updated_by?: number | null
+  updated_by_user?: {
+    id: number
+    name: string
+  } | null
+  updated_at?: string
+}
+

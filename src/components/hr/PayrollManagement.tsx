@@ -6,9 +6,11 @@ import {
   AlertCircleIcon,
   Download01Icon,
   Cancel01Icon,
+  EyeIcon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
-import api from '../../services/api'
+import { Pagination } from '../common/Pagination'
+import api, { API_BASE_URL } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import type { PayrollPeriod, Payroll } from '../../types'
@@ -24,6 +26,9 @@ export const PayrollManagement: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true)
   const [generating, setGenerating] = useState<boolean>(false)
   const [authorizing, setAuthorizing] = useState<boolean>(false)
+  const [downloadingId, setDownloadingId] = useState<number | null>(null)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [pageSize, setPageSize] = useState<number>(10)
 
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
   const [periodForm, setPeriodForm] = useState({
@@ -75,8 +80,14 @@ export const PayrollManagement: React.FC = () => {
   useEffect(() => {
     if (selectedPeriodId) {
       loadPayrollsForPeriod(selectedPeriodId)
+      setCurrentPage(1)
     }
   }, [selectedPeriodId])
+
+  const paginatedPayrolls = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return payrolls.slice(start, start + pageSize)
+  }, [payrolls, currentPage, pageSize])
 
   const selectedPeriod = useMemo(() => {
     return periods.find((p) => p.id === selectedPeriodId)
@@ -169,6 +180,7 @@ export const PayrollManagement: React.FC = () => {
   }
 
   const handleDownloadPdf = async (payrollId: number, payslipNumber: string) => {
+    setDownloadingId(payrollId)
     try {
       const res = await api.get(`/payrolls/${payrollId}/download`, {
         responseType: 'blob',
@@ -180,11 +192,25 @@ export const PayrollManagement: React.FC = () => {
       link.setAttribute('download', `Slip_Gaji_${payslipNumber}.pdf`)
       document.body.appendChild(link)
       link.click()
-      link.remove()
-      toast.info('Unduhan Dimulai', `Slip gaji ${payslipNumber} berhasil diunduh.`)
+      setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      }, 1000)
+      toast.success('Unduhan Berhasil', `Slip gaji ${payslipNumber} berhasil diunduh.`)
     } catch (err) {
-      toast.error('Gagal Mengunduh', 'Tidak dapat mengunduh slip PDF.')
+      console.error('Blob download fallback to direct window:', err)
+      const token = localStorage.getItem('hris_token') || ''
+      const downloadUrl = `${API_BASE_URL}/payrolls/${payrollId}/download?token=${encodeURIComponent(token)}`
+      window.open(downloadUrl, '_blank')
+    } finally {
+      setDownloadingId(null)
     }
+  }
+
+  const handleViewPdf = (payrollId: number) => {
+    const token = localStorage.getItem('hris_token') || ''
+    const viewUrl = `${API_BASE_URL}/payrolls/${payrollId}/download?mode=view&token=${encodeURIComponent(token)}`
+    window.open(viewUrl, '_blank')
   }
 
   const formatRupiah = (val?: number) => {
@@ -360,22 +386,29 @@ export const PayrollManagement: React.FC = () => {
             </span>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div>
+            <div className="px-4 py-2 bg-muted/20 border-b border-border flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+              <span>Perhitungan Transparan: <strong className="text-foreground">Gaji Bersih (Net)</strong> = (Gaji Pokok + Tunjangan + Lembur) - Total Potongan (BPJS, PPh 21, Denda/Absensi)</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Semua Potongan Otomatis Terpotong</span>
+            </div>
+            <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-foreground">
               <thead className="bg-muted/40 text-[11px] font-normal text-muted-foreground/80 uppercase tracking-wider border-b border-border">
                 <tr>
                   <th className="py-2.5 px-4">Karyawan</th>
                   <th className="py-2.5 px-4">No Slip Gaji</th>
                   <th className="py-2.5 px-4">Gaji Pokok</th>
+                  <th className="py-2.5 px-4">Tunjangan</th>
                   <th className="py-2.5 px-4">Upah Lembur</th>
                   <th className="py-2.5 px-4">Potongan</th>
                   <th className="py-2.5 px-4">Gaji Bersih (Net)</th>
-                  <th className="py-2.5 px-4 text-right">PDF</th>
+                  <th className="py-2.5 px-4 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {payrolls.map((p) => {
+                {paginatedPayrolls.map((p) => {
                   const basic = p.summary?.basic_salary ?? p.basic_salary ?? 0
+                  const allowances = p.summary?.total_allowances ?? p.total_allowances ?? 0
                   const ot = p.summary?.total_overtime_pay ?? p.total_overtime_pay ?? 0
                   const ded = p.summary?.total_deductions ?? p.total_deductions ?? 0
                   const net = p.summary?.net_salary ?? p.net_salary ?? 0
@@ -397,6 +430,9 @@ export const PayrollManagement: React.FC = () => {
                         {formatRupiah(basic)}
                       </td>
                       <td className="py-2.5 px-4 text-xs font-normal text-emerald-600 dark:text-emerald-400">
+                        +{formatRupiah(allowances)}
+                      </td>
+                      <td className="py-2.5 px-4 text-xs font-normal text-emerald-600 dark:text-emerald-400">
                         +{formatRupiah(ot)}
                       </td>
                       <td className="py-2.5 px-4 text-xs font-normal text-rose-600 dark:text-rose-400">
@@ -405,14 +441,24 @@ export const PayrollManagement: React.FC = () => {
                       <td className="py-2.5 px-4 text-xs font-semibold text-foreground">
                         {formatRupiah(net)}
                       </td>
-                      <td className="py-2.5 px-4 text-right">
+                      <td className="py-2.5 px-4 text-right space-x-1.5 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleViewPdf(p.id)}
+                          title="Lihat / Cetak Slip PDF di tab baru"
+                          className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors border border-border cursor-pointer"
+                        >
+                          <Icon icon={EyeIcon} size={13} />
+                          <span>Lihat</span>
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleDownloadPdf(p.id, p.payslip_number)}
-                          className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors border border-border"
+                          disabled={downloadingId === p.id}
+                          className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-normal text-xs transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
                         >
-                          <Icon icon={Download01Icon} size={13} />
-                          <span>PDF</span>
+                          <Icon icon={Download01Icon} size={13} className={downloadingId === p.id ? 'animate-spin' : ''} />
+                          <span>{downloadingId === p.id ? 'Mengunduh...' : 'PDF'}</span>
                         </button>
                       </td>
                     </tr>
@@ -421,7 +467,17 @@ export const PayrollManagement: React.FC = () => {
               </tbody>
             </table>
           </div>
-        )}
+
+          <Pagination
+            currentPage={currentPage}
+            totalItems={payrolls.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[10, 25, 50, 100]}
+          />
+        </div>
+      )}
       </div>
 
       {showCreateModal && (

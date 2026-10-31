@@ -2,27 +2,31 @@ import React, { useEffect, useMemo, useState } from 'react'
 import {
   Add01Icon,
   Alert02Icon,
+  Camera01Icon,
   Cancel01Icon,
   CheckmarkCircle02Icon,
   Edit02Icon,
   EyeIcon,
   EyeOffIcon,
   FilterIcon,
+  InformationCircleIcon,
   LockPasswordIcon,
   RefreshIcon,
   Search01Icon,
   SecurityCheckIcon,
   UserGroupIcon,
-  UserIcon,
 } from '@hugeicons/core-free-icons'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { userService } from '../../services/api'
 import type { Role } from '../../types'
 import { Icon } from '../common/Icon'
+import { Avatar } from '../common/Avatar'
+import { AvatarCropModal } from '../common/AvatarCropModal'
+import { Pagination } from '../common/Pagination'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
-import { Card } from '../ui/card'
+import { Card, CardTitle, CardDescription } from '../ui/card'
 import { Input } from '../ui/input'
 
 export interface ManagedUser {
@@ -30,6 +34,7 @@ export interface ManagedUser {
   name: string
   email: string
   phone: string | null
+  avatar_url?: string | null
   is_active: boolean
   roles: Role[]
   primary_role: Role
@@ -47,20 +52,36 @@ export interface ManagedUser {
 const ROLE_OPTIONS: Role[] = ['Superadmin', 'HR Manager', 'HR Staff', 'Manager', 'Employee']
 
 const ROLE_BADGE_STYLES: Record<Role, string> = {
-  Superadmin: 'bg-brand-dark text-white border-brand-dark dark:border-secondary/40 dark:text-secondary',
-  'HR Manager': 'bg-primary/10 text-primary border-primary/30',
+  Superadmin: 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900',
+  'HR Manager': 'bg-primary/10 text-primary border-primary/25',
   'HR Staff': 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25',
   Manager: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/25',
-  Employee: 'bg-muted text-foreground border-border',
+  Employee: 'bg-muted/70 text-foreground border-border/80',
 }
 
 const ROLE_DESCRIPTIONS: Record<Role, string> = {
-  Superadmin: 'Otoritas tata kelola tertinggi: manajemen pengguna, konfigurasi RBAC, dan akses penuh ke seluruh modul sistem.',
-  'HR Manager': 'Otorisasi penggajian final, persetujuan cuti & lembur tahap akhir, serta master data organisasi & karyawan.',
-  'HR Staff': 'Operasional direktori karyawan, validasi presensi GPS, audit anomali, dan pembuatan draf payroll periodik.',
-  Manager: 'Monitoring kehadiran tim kerja bawahan langsung dan persetujuan pengajuan cuti/lembur tahap pertama.',
-  Employee: 'Layanan mandiri (ESS): presensi GPS berbasis radius kantor, pengajuan cuti & lembur, serta unduh slip gaji.',
+  Superadmin: 'Akses penuh ke seluruh modul sistem, kelola akun pengguna, dan pengaturan peran.',
+  'HR Manager': 'Persetujuan akhir cuti & lembur, proses payroll, serta master data karyawan.',
+  'HR Staff': 'Kelola data karyawan, rekap presensi, lembur, dan penyusunan draf payroll.',
+  Manager: 'Monitoring presensi tim kerja serta persetujuan cuti & lembur tim.',
+  Employee: 'Presensi mandiri harian, pengajuan cuti & lembur, dan melihat slip gaji.',
 }
+
+// Crisp, pixel-perfect dropdown chevron
+const ChevronDown: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg
+    className={className}
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+      clipRule="evenodd"
+    />
+  </svg>
+)
 
 export const UserRoleManagement: React.FC = () => {
   const { user: currentUser, refreshUser } = useAuth()
@@ -75,12 +96,18 @@ export const UserRoleManagement: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<string>('ALL')
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL')
   const [updatingUserId, setUpdatingUserId] = useState<number | null>(null)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [pageSize, setPageSize] = useState<number>(10)
 
   // Modal state for Create / Edit User
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [editingUser, setEditingUser] = useState<ManagedUser | null>(null)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [showPassword, setShowPassword] = useState<boolean>(false)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [isCropModalOpen, setIsCropModalOpen] = useState<boolean>(false)
+  const [cropSourceImage, setCropSourceImage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -148,6 +175,15 @@ export const UserRoleManagement: React.FC = () => {
       )
     })
   }, [users, searchQuery, roleFilter, statusFilter])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, roleFilter, statusFilter])
+
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredUsers.slice(start, start + pageSize)
+  }, [filteredUsers, currentPage, pageSize])
 
   // Computed summary counts
   const summaryCounts = useMemo(() => {
@@ -217,6 +253,10 @@ export const UserRoleManagement: React.FC = () => {
   const openCreateModal = () => {
     setEditingUser(null)
     setShowPassword(false)
+    setAvatarFile(null)
+    setAvatarPreview(null)
+    setCropSourceImage(null)
+    setIsCropModalOpen(false)
     setFormData({
       name: '',
       email: '',
@@ -232,6 +272,10 @@ export const UserRoleManagement: React.FC = () => {
   const openEditModal = (target: ManagedUser) => {
     setEditingUser(target)
     setShowPassword(false)
+    setAvatarFile(null)
+    setAvatarPreview(target.avatar_url || null)
+    setCropSourceImage(null)
+    setIsCropModalOpen(false)
     setFormData({
       name: target.name,
       email: target.email,
@@ -244,24 +288,56 @@ export const UserRoleManagement: React.FC = () => {
     setIsModalOpen(true)
   }
 
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Format Tidak Didukung', 'Harap pilih file gambar (JPG, PNG, atau WebP).')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File Terlalu Besar', 'Ukuran foto maksimal 10 MB sebelum penyesuaian.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      setCropSourceImage(reader.result as string)
+      setIsCropModalOpen(true)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  const handleCropComplete = (croppedFile: File, previewUrl: string) => {
+    setAvatarFile(croppedFile)
+    setAvatarPreview(previewUrl)
+    const sizeKb = Math.round(croppedFile.size / 1024)
+    toast.success('Foto Disesuaikan', `Foto berhasil dipotong dan dikompres (${sizeKb} KB, maks 1 MB).`)
+  }
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setFeedback(null)
 
     try {
+      const formPayload = new FormData()
+      formPayload.append('name', formData.name.trim())
+      formPayload.append('email', formData.email.trim())
+      if (formData.phone.trim()) {
+        formPayload.append('phone', formData.phone.trim())
+      }
+      formPayload.append('role', formData.role)
+      formPayload.append('is_active', formData.is_active ? '1' : '0')
+      if (formData.password.trim()) {
+        formPayload.append('password', formData.password.trim())
+      }
+      if (avatarFile) {
+        formPayload.append('avatar', avatarFile)
+      }
+
       if (editingUser) {
-        const payload: Record<string, any> = {
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          phone: formData.phone.trim() || null,
-          role: formData.role,
-          is_active: formData.is_active,
-        }
-        if (formData.password.trim()) {
-          payload.password = formData.password.trim()
-        }
-        const res = await userService.updateUser(editingUser.id, payload)
+        const res = await userService.updateUser(editingUser.id, formPayload)
         if (res.data?.success) {
           const updated: ManagedUser = res.data.data
           setUsers((prev) => prev.map((item) => (item.id === editingUser.id ? updated : item)))
@@ -274,14 +350,7 @@ export const UserRoleManagement: React.FC = () => {
           setIsModalOpen(false)
         }
       } else {
-        const res = await userService.createUser({
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          phone: formData.phone.trim() || undefined,
-          password: formData.password,
-          role: formData.role,
-          is_active: formData.is_active,
-        })
+        const res = await userService.createUser(formPayload)
         if (res.data?.success) {
           const created: ManagedUser = res.data.data
           setUsers((prev) => [...prev, created])
@@ -313,184 +382,106 @@ export const UserRoleManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 font-sans">
-      {/* Superadmin Executive Governance Header */}
-      <Card className="p-6 bg-card border-border shadow-xs overflow-hidden relative">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <Badge variant="dark" className="px-2.5 py-0.5 text-xs font-semibold gap-1.5 shadow-xs">
-                <Icon icon={SecurityCheckIcon} size={14} className="text-secondary" />
-                <span>Otoritas Superadmin</span>
-              </Badge>
-              <Badge variant="primarySubtle" className="text-xs font-medium">
-                Master Governance & RBAC
-              </Badge>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              Tata Kelola Pengguna & Hak Akses Role
-            </h1>
-            <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-              Pusat kendali akun login, penugasan role hierarki bertingkat (RBAC), otorisasi status aktif, dan pengelolaan kredensial untuk seluruh personel organisasi.
+    <div className="space-y-5 sm:space-y-6 font-sans text-xs sm:text-sm">
+      {/* Header Banner - Matches Peraturan Denda */}
+      <div className="bg-primary text-primary-foreground p-5 sm:p-6 rounded-2xl shadow-xs relative overflow-hidden">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="max-w-2xl">
+            <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-medium uppercase tracking-wider mb-2">
+              <Icon icon={SecurityCheckIcon} size={14} className="mr-1.5" />
+              Keamanan & Otorisasi Sistem
+            </Badge>
+            <h2 className="text-base sm:text-xl font-semibold tracking-tight text-white">
+              Kelola Pengguna & Hak Akses Role
+            </h2>
+            <p className="text-primary-foreground/85 text-xs mt-1 font-normal leading-relaxed">
+              Kelola seluruh akun pengguna terdaftar, tetapkan peran wewenang sistem (Superadmin, HR, Manajer, Karyawan), dan kontrol otentikasi login.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            <Button
-              variant="outline"
-              size="default"
+            <button
+              type="button"
               onClick={() => fetchUsers(true)}
-              className="gap-2 cursor-pointer font-medium"
-              title="Segarkan data pengguna dari server"
+              disabled={isLoading}
+              className="h-8.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Segarkan data pengguna"
             >
               <Icon
                 icon={RefreshIcon}
-                size={16}
-                className={isLoading ? 'animate-spin text-primary' : 'text-muted-foreground'}
+                size={14}
+                className={isLoading ? 'animate-spin' : ''}
               />
               <span>Segarkan</span>
-            </Button>
+            </button>
 
-            <Button
-              variant="default"
-              size="default"
+            <button
+              type="button"
               onClick={openCreateModal}
-              className="gap-2 shadow-xs cursor-pointer font-medium"
+              className="h-8.5 px-3.5 rounded-xl bg-white text-primary hover:bg-white/95 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             >
-              <Icon icon={Add01Icon} size={16} />
+              <Icon icon={Add01Icon} size={14} />
               <span>Tambah Akun Baru</span>
-            </Button>
+            </button>
           </div>
         </div>
-      </Card>
+      </div>
 
-      {/* Interactive Metric Cards & Quick Filters */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {/* All Users */}
-        <button
-          type="button"
-          onClick={() => setRoleFilter('ALL')}
-          className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-            roleFilter === 'ALL'
-              ? 'bg-primary text-primary-foreground border-primary shadow-xs ring-1 ring-primary'
-              : 'bg-card text-foreground border-border hover:bg-muted/60'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-semibold ${roleFilter === 'ALL' ? 'text-primary-foreground/90' : 'text-muted-foreground'}`}>
-              Semua Akun
-            </span>
-            <Icon icon={UserGroupIcon} size={15} className={roleFilter === 'ALL' ? 'text-primary-foreground/80' : 'text-muted-foreground/60'} />
-          </div>
-          <p className="text-2xl font-bold mt-1 tabular-nums tracking-tight">{summaryCounts.total}</p>
-        </button>
-
-        {/* Superadmin Role */}
-        <button
-          type="button"
-          onClick={() => setRoleFilter('Superadmin')}
-          className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-            roleFilter === 'Superadmin'
-              ? 'bg-brand-dark text-white border-brand-dark shadow-xs ring-1 ring-secondary'
-              : 'bg-card text-foreground border-border hover:bg-muted/60'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-semibold ${roleFilter === 'Superadmin' ? 'text-secondary' : 'text-muted-foreground'}`}>
-              Superadmin
-            </span>
-            <Icon icon={SecurityCheckIcon} size={15} className={roleFilter === 'Superadmin' ? 'text-secondary' : 'text-muted-foreground/60'} />
-          </div>
-          <p className="text-2xl font-bold mt-1 tabular-nums tracking-tight">{summaryCounts.Superadmin}</p>
-        </button>
-
-        {/* HR Manager Role */}
-        <button
-          type="button"
-          onClick={() => setRoleFilter('HR Manager')}
-          className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-            roleFilter === 'HR Manager'
-              ? 'bg-primary text-primary-foreground border-primary shadow-xs ring-1 ring-primary'
-              : 'bg-card text-foreground border-border hover:bg-muted/60'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-semibold truncate ${roleFilter === 'HR Manager' ? 'text-primary-foreground/90' : 'text-muted-foreground'}`}>
-              HR Manager
-            </span>
-          </div>
-          <p className="text-2xl font-bold mt-1 tabular-nums tracking-tight">{summaryCounts['HR Manager']}</p>
-        </button>
-
-        {/* HR Staff Role */}
-        <button
-          type="button"
-          onClick={() => setRoleFilter('HR Staff')}
-          className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-            roleFilter === 'HR Staff'
-              ? 'bg-primary text-primary-foreground border-primary shadow-xs ring-1 ring-primary'
-              : 'bg-card text-foreground border-border hover:bg-muted/60'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-semibold truncate ${roleFilter === 'HR Staff' ? 'text-primary-foreground/90' : 'text-muted-foreground'}`}>
-              HR Staff
-            </span>
-          </div>
-          <p className="text-2xl font-bold mt-1 tabular-nums tracking-tight">{summaryCounts['HR Staff']}</p>
-        </button>
-
-        {/* Manager Role */}
-        <button
-          type="button"
-          onClick={() => setRoleFilter('Manager')}
-          className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-            roleFilter === 'Manager'
-              ? 'bg-primary text-primary-foreground border-primary shadow-xs ring-1 ring-primary'
-              : 'bg-card text-foreground border-border hover:bg-muted/60'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-semibold truncate ${roleFilter === 'Manager' ? 'text-primary-foreground/90' : 'text-muted-foreground'}`}>
-              Manajer Tim
-            </span>
-          </div>
-          <p className="text-2xl font-bold mt-1 tabular-nums tracking-tight">{summaryCounts.Manager}</p>
-        </button>
-
-        {/* Employee Role */}
-        <button
-          type="button"
-          onClick={() => setRoleFilter('Employee')}
-          className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-            roleFilter === 'Employee'
-              ? 'bg-primary text-primary-foreground border-primary shadow-xs ring-1 ring-primary'
-              : 'bg-card text-foreground border-border hover:bg-muted/60'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-semibold truncate ${roleFilter === 'Employee' ? 'text-primary-foreground/90' : 'text-muted-foreground'}`}>
-              Karyawan (ESS)
-            </span>
-          </div>
-          <p className="text-2xl font-bold mt-1 tabular-nums tracking-tight">{summaryCounts.Employee}</p>
-        </button>
+      {/* Role Filter Option Cards - Matches Peraturan Denda Scheme Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        {[
+          { key: 'ALL', label: 'Semua Akun', count: summaryCounts.total, icon: UserGroupIcon, subtitle: 'Seluruh pengguna' },
+          { key: 'Superadmin', label: 'Superadmin', count: summaryCounts.Superadmin, icon: SecurityCheckIcon, subtitle: 'Akses penuh' },
+          { key: 'HR Manager', label: 'HR Manager', count: summaryCounts['HR Manager'], subtitle: 'Payroll & Master' },
+          { key: 'HR Staff', label: 'HR Staff', count: summaryCounts['HR Staff'], subtitle: 'Administrasi HR' },
+          { key: 'Manager', label: 'Manager', count: summaryCounts.Manager, subtitle: 'Monitoring tim' },
+          { key: 'Employee', label: 'Employee', count: summaryCounts.Employee, subtitle: 'Presensi mandiri' },
+        ].map((card) => {
+          const isSelected = roleFilter === card.key
+          return (
+            <div
+              key={card.key}
+              onClick={() => setRoleFilter(card.key)}
+              className={`p-3.5 rounded-2xl border cursor-pointer transition-all shadow-xs ${
+                isSelected
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                  : 'border-border bg-card hover:bg-muted/40'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-1 text-[11px]">
+                <span className="font-medium text-foreground truncate">
+                  {card.label}
+                </span>
+                {card.icon && (
+                  <Icon icon={card.icon} size={13} className="text-primary shrink-0" />
+                )}
+              </div>
+              <p className="text-xl font-medium mt-1 tabular-nums tracking-tight text-foreground">{card.count}</p>
+              <div className="mt-1.5 pt-1.5 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground font-normal">
+                <span className="truncate">{card.subtitle}</span>
+                <span className={isSelected ? 'text-primary font-medium' : 'text-muted-foreground/70'}>
+                  {isSelected ? 'Aktif' : 'Pilih'}
+                </span>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Inline Feedback Banner */}
       {feedback && (
         <div
           role="status"
-          className={`p-4 rounded-xl border flex items-center justify-between gap-3 text-sm transition-all duration-200 ${
+          className={`p-3.5 sm:p-4 rounded-xl text-xs flex items-start space-x-2.5 border font-normal transition-all duration-200 ${
             feedback.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-300'
-              : 'bg-rose-500/10 border-rose-500/25 text-rose-700 dark:text-rose-300'
+              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25'
+              : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25'
           }`}
         >
-          <div className="flex items-center gap-2.5 font-medium">
+          <div className="flex items-center gap-2 font-medium">
             <Icon
               icon={feedback.type === 'success' ? CheckmarkCircle02Icon : Alert02Icon}
-              size={18}
+              size={16}
               className={feedback.type === 'success' ? 'text-emerald-600 dark:text-emerald-400 shrink-0' : 'text-rose-600 dark:text-rose-400 shrink-0'}
             />
             <span>{feedback.text}</span>
@@ -498,303 +489,421 @@ export const UserRoleManagement: React.FC = () => {
           <button
             type="button"
             onClick={() => setFeedback(null)}
-            className="p-1 rounded-md hover:bg-foreground/5 cursor-pointer text-muted-foreground hover:text-foreground"
+            className="p-1 rounded-md hover:bg-foreground/5 cursor-pointer text-muted-foreground hover:text-foreground shrink-0"
             aria-label="Tutup notifikasi"
           >
-            <Icon icon={Cancel01Icon} size={15} />
+            <Icon icon={Cancel01Icon} size={14} />
           </button>
         </div>
       )}
 
-      {/* Main Table Card & Filter Toolbar */}
-      <Card className="bg-card border-border shadow-xs overflow-hidden">
-        {/* Toolbar Header */}
-        <div className="p-4 sm:p-5 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-3.5 bg-card">
-          <div className="flex flex-1 items-center gap-2.5 max-w-xl">
+      {/* Main Table Card - Matches Peraturan Denda Card Container */}
+      <Card className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-4">
+        {/* Card Header with Title, Description, and Toolbar */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-3 border-b border-border">
+          <div>
+            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+              <Icon icon={UserGroupIcon} size={18} className="text-primary" />
+              <span>Daftar Akun Pengguna & Hak Akses</span>
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground mt-0.5 font-normal">
+              Kelola otorisasi peran, ubah role cepat, dan aktifkan atau nonaktifkan akun pengguna.
+            </CardDescription>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap w-full xl:w-auto">
             {/* Search Input */}
-            <div className="relative flex-1">
+            <div className="relative flex-1 sm:w-56 min-w-[160px]">
               <Icon
                 icon={Search01Icon}
-                size={16}
-                className="text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                size={14}
+                className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
               />
               <Input
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari nama, email, NIK, jabatan, atau departemen..."
+                placeholder="Cari nama, email, NIK..."
                 aria-label="Cari akun pengguna"
-                className="pl-9 pr-8 h-10 text-sm"
+                className="pl-8.5 pr-7 h-8.5 text-xs rounded-xl font-normal"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground cursor-pointer"
                   aria-label="Hapus kata kunci pencarian"
                 >
-                  <Icon icon={Cancel01Icon} size={14} />
+                  <Icon icon={Cancel01Icon} size={13} />
                 </button>
               )}
             </div>
 
             {/* Role Filter Dropdown */}
-            <select
-              aria-label="Filter berdasarkan role"
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="h-10 px-3 rounded-xl border border-input bg-background text-xs font-semibold text-foreground focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer shrink-0"
-            >
-              <option value="ALL">Semua Role</option>
-              {ROLE_OPTIONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
+            <div className="relative shrink-0 flex-1 sm:flex-none">
+              <select
+                aria-label="Filter berdasarkan role"
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="w-full sm:w-auto h-8.5 pl-3 pr-8 rounded-xl border border-input bg-background text-xs font-normal text-foreground focus:ring-1 focus:ring-primary focus:outline-none appearance-none cursor-pointer hover:bg-muted/40 transition-colors"
+              >
+                <option value="ALL">Semua Role</option>
+                {ROLE_OPTIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+              </div>
+            </div>
 
             {/* Status Filter Dropdown */}
-            <select
-              aria-label="Filter berdasarkan status aktif"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="h-10 px-3 rounded-xl border border-input bg-background text-xs font-semibold text-foreground focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer shrink-0"
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="ACTIVE">Hanya Aktif</option>
-              <option value="INACTIVE">Hanya Nonaktif</option>
-            </select>
-          </div>
+            <div className="relative shrink-0 flex-1 sm:flex-none">
+              <select
+                aria-label="Filter berdasarkan status aktif"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="w-full sm:w-auto h-8.5 pl-3 pr-8 rounded-xl border border-input bg-background text-xs font-normal text-foreground focus:ring-1 focus:ring-primary focus:outline-none appearance-none cursor-pointer hover:bg-muted/40 transition-colors"
+              >
+                <option value="ALL">Semua Status</option>
+                <option value="ACTIVE">Aktif</option>
+                <option value="INACTIVE">Nonaktif</option>
+              </select>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+              </div>
+            </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-3 text-xs text-muted-foreground">
             {isFilterActive && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleResetFilters}
-                className="text-xs text-primary hover:text-primary gap-1 h-8 px-2 cursor-pointer"
+                className="text-xs text-primary hover:text-primary gap-1 h-8 px-2 cursor-pointer rounded-xl font-normal"
               >
-                <Icon icon={FilterIcon} size={13} />
-                <span>Reset Filter</span>
+                <Icon icon={FilterIcon} size={12} />
+                <span>Reset</span>
               </Button>
             )}
-            <span className="font-medium whitespace-nowrap">
-              Menampilkan <strong className="text-foreground tabular-nums">{filteredUsers.length}</strong> dari{' '}
-              <strong className="text-foreground tabular-nums">{users.length}</strong> akun
-            </span>
           </div>
         </div>
 
         {/* Loading State */}
         {isLoading ? (
-          <div className="p-16 text-center space-y-3.5">
-            <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-            <p className="text-sm font-medium text-muted-foreground">Memuat daftar akun pengguna & hak akses...</p>
+          <div className="p-12 text-center space-y-2.5">
+            <div className="w-7 h-7 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
+            <p className="text-xs font-normal text-muted-foreground">Memuat data pengguna...</p>
           </div>
         ) : errorMsg ? (
           /* Error State */
-          <div className="p-14 text-center space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
-              <Icon icon={Alert02Icon} size={24} />
+          <div className="p-10 text-center space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
+              <Icon icon={Alert02Icon} size={20} />
             </div>
-            <div className="space-y-1">
-              <p className="text-base font-semibold text-foreground">Gagal Menampilkan Data Pengguna</p>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">{errorMsg}</p>
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium text-foreground">Gagal Menampilkan Data Pengguna</p>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto">{errorMsg}</p>
             </div>
-            <Button variant="default" size="sm" onClick={() => fetchUsers()} className="cursor-pointer">
+            <Button variant="default" size="sm" onClick={() => fetchUsers()} className="h-7.5 text-xs cursor-pointer rounded-lg font-normal">
               Coba Muat Ulang
             </Button>
           </div>
         ) : filteredUsers.length === 0 ? (
           /* Empty State */
-          <div className="p-14 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center mx-auto">
-              <Icon icon={Search01Icon} size={22} />
+          <div className="p-10 text-center space-y-2.5">
+            <div className="w-10 h-10 rounded-xl bg-muted text-muted-foreground flex items-center justify-center mx-auto">
+              <Icon icon={Search01Icon} size={18} />
             </div>
-            <div className="space-y-1">
-              <p className="text-base font-semibold text-foreground">Tidak Ada Akun yang Sesuai</p>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium text-foreground">Tidak Ada Akun yang Sesuai</p>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto">
                 {isFilterActive
                   ? 'Tidak ada akun yang cocok dengan kata kunci atau filter yang Anda terapkan.'
-                  : 'Belum ada akun pengguna yang terdaftar di dalam sistem.'}
+                  : 'Belum ada akun pengguna yang terdaftar di sistem.'}
               </p>
             </div>
             {isFilterActive && (
-              <Button variant="outline" size="sm" onClick={handleResetFilters} className="cursor-pointer">
-                Atur Ulang Filter Pencarian
+              <Button variant="outline" size="sm" onClick={handleResetFilters} className="h-7.5 text-xs cursor-pointer rounded-lg font-normal">
+                Reset Filter
               </Button>
             )}
           </div>
         ) : (
           /* Data Table */
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-muted/40 border-b border-border text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <th className="py-3.5 px-4 sm:px-6">Pengguna & Kontak</th>
-                  <th className="py-3.5 px-4">Tautan Profil Karyawan</th>
-                  <th className="py-3.5 px-4">Role Sistem (RBAC)</th>
-                  <th className="py-3.5 px-4">Status Akun</th>
-                  <th className="py-3.5 px-4 sm:px-6 text-right">Tindakan</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border text-sm">
-                {filteredUsers.map((item) => {
-                  const isSelf = currentUser?.id === item.id
-                  const isBusy = updatingUserId === item.id
+          <>
+            {/* Desktop Table View (>= 640px) */}
+            <div className="hidden sm:block overflow-x-auto rounded-xl border border-border/80">
+              <table className="w-full text-left border-collapse table-fixed">
+                <colgroup>
+                  <col className="w-[23%]" />
+                  <col className="w-[23%]" />
+                  <col className="w-[17%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[26%]" />
+                </colgroup>
+                <thead>
+                  <tr className="bg-muted/30 border-b border-border/80 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2.5 px-3">Pengguna</th>
+                    <th className="py-2.5 px-3">Data Karyawan</th>
+                    <th className="py-2.5 px-2.5 whitespace-nowrap">Peran & Hak Akses</th>
+                    <th className="py-2.5 px-2 whitespace-nowrap">Status Akun</th>
+                    <th className="py-2.5 px-3 text-right whitespace-nowrap">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 bg-card text-xs">
+                  {paginatedUsers.map((item) => {
+                    const isSelf = currentUser?.id === item.id
+                    const isBusy = updatingUserId === item.id
 
-                  return (
-                    <tr key={item.id} className="hover:bg-muted/30 transition-colors">
-                      {/* User Info */}
-                      <td className="py-4 px-4 sm:px-6 align-middle">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border ${
-                              item.primary_role === 'Superadmin'
-                                ? 'bg-brand-dark text-white border-brand-dark'
-                                : 'bg-muted border-border text-foreground'
-                            }`}
-                          >
-                            {item.name ? item.name.charAt(0).toUpperCase() : <Icon icon={UserIcon} size={15} />}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold text-foreground truncate">{item.name}</p>
-                              {isSelf && (
-                                <Badge variant="primarySubtle" className="text-[10px] font-semibold px-1.5 py-0.2">
-                                  Akun Anda
-                                </Badge>
+                    return (
+                      <tr key={item.id} className="hover:bg-muted/25 transition-colors">
+                        {/* User Info */}
+                        <td className="py-2.5 px-3 align-middle overflow-hidden">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Avatar src={item.avatar_url} name={item.name} size="sm" className="shrink-0" />
+                            <div className="min-w-0 overflow-hidden">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-normal text-foreground text-xs truncate block" title={item.name}>
+                                  {item.name}
+                                </span>
+                                {isSelf && (
+                                  <Badge variant="primarySubtle" className="text-[9px] font-normal px-1.5 py-0.2 shrink-0">
+                                    Akun Anda
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-muted-foreground truncate" title={item.email}>
+                                {item.email}
+                              </p>
+                              {item.phone && (
+                                <p className="text-[10px] text-muted-foreground/80 truncate">{item.phone}</p>
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground truncate">{item.email}</p>
-                            {item.phone && (
-                              <p className="text-[11px] text-muted-foreground/80 truncate mt-0.5">{item.phone}</p>
+                          </div>
+                        </td>
+
+                        {/* Linked Employee Info */}
+                        <td className="py-2.5 px-3 align-middle overflow-hidden">
+                          {item.employee ? (
+                            <div className="space-y-0.5 min-w-0 overflow-hidden">
+                              <p className="text-xs font-normal text-foreground truncate block" title={item.employee.job_position || ''}>
+                                {item.employee.job_position || 'Jabatan Belum Diatur'}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground truncate block" title={`${item.employee.department || 'Tanpa Departemen'} · ${item.employee.branch || 'Kantor Pusat'}`}>
+                                {item.employee.department || 'Tanpa Departemen'} · {item.employee.branch || 'Kantor Pusat'}
+                              </p>
+                              {item.employee.employee_code && item.employee.employee_code.trim() !== '' && (
+                                <span className="inline-block px-1.5 py-0.2 rounded bg-muted text-[10px] font-mono text-muted-foreground border border-border">
+                                  NIK: {item.employee.employee_code}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="space-y-0.5 min-w-0">
+                              <span className="inline-block px-1.5 py-0.2 rounded bg-muted text-[10px] font-normal text-muted-foreground border border-border">
+                                Akun Sistem
+                              </span>
+                              <p className="text-[10px] text-muted-foreground/70">Non-karyawan</p>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Role Selector */}
+                        <td className="py-2.5 px-2.5 align-middle whitespace-nowrap overflow-hidden">
+                          <div className="relative inline-flex items-center w-full max-w-[130px]">
+                            <select
+                              aria-label={`Ubah role untuk ${item.name}`}
+                              value={item.primary_role}
+                              disabled={isSelf || isBusy}
+                              onChange={(e) => handleQuickRoleChange(item, e.target.value as Role)}
+                              className={`h-7 pl-2 pr-6 text-xs font-normal rounded-lg border appearance-none transition-all focus:outline-none focus:ring-1 focus:ring-primary w-full truncate ${
+                                ROLE_BADGE_STYLES[item.primary_role] || ROLE_BADGE_STYLES.Employee
+                              } ${isSelf || isBusy ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:opacity-90'}`}
+                              title={
+                                isSelf
+                                  ? 'Role akun sendiri tidak dapat diubah'
+                                  : 'Klik untuk mengubah role'
+                              }
+                            >
+                              {ROLE_OPTIONS.map((roleOpt) => (
+                                <option
+                                  key={roleOpt}
+                                  value={roleOpt}
+                                  className="bg-card text-foreground font-normal text-xs"
+                                >
+                                  {roleOpt}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="absolute right-2 pointer-events-none opacity-70">
+                              <ChevronDown className="w-3 h-3" />
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Active Status Indicator */}
+                        <td className="py-2.5 px-2 align-middle whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-normal">
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                item.is_active ? 'bg-emerald-500' : 'bg-muted-foreground/60'
+                              }`}
+                            />
+                            <span className={item.is_active ? 'text-foreground' : 'text-muted-foreground'}>
+                              {item.is_active ? 'Aktif' : 'Nonaktif'}
+                            </span>
+                          </span>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(item)}
+                              className="h-7 px-2 rounded-lg text-xs font-normal text-muted-foreground hover:text-foreground hover:bg-muted border border-border/60 transition-colors inline-flex items-center gap-1 cursor-pointer shrink-0"
+                            >
+                              <Icon icon={Edit02Icon} size={13} />
+                              <span>Kelola</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={isSelf || isBusy}
+                              onClick={() => handleToggleActive(item)}
+                              title={isSelf ? 'Akun Anda tidak dapat dinonaktifkan' : undefined}
+                              className={`h-7 px-2 rounded-lg text-xs font-normal border transition-colors shrink-0 ${
+                                isSelf
+                                  ? 'opacity-40 cursor-not-allowed border-border/40 text-muted-foreground'
+                                  : item.is_active
+                                  ? 'border-border/60 text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 hover:border-rose-200 cursor-pointer'
+                                  : 'border-border/60 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/10 hover:border-emerald-200 cursor-pointer'
+                              }`}
+                            >
+                              <span>{item.is_active ? 'Nonaktifkan' : 'Aktifkan'}</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View (< 640px) */}
+            <div className="sm:hidden divide-y divide-border rounded-xl border border-border/80 overflow-hidden">
+              {paginatedUsers.map((item) => {
+                const isSelf = currentUser?.id === item.id
+                const isBusy = updatingUserId === item.id
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`p-3.5 space-y-2.5 transition-colors ${
+                      !item.is_active ? 'opacity-65 bg-muted/15' : 'bg-card'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Avatar src={item.avatar_url} name={item.name} size="sm" />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-normal text-xs text-foreground truncate">{item.name}</span>
+                            {isSelf && (
+                              <Badge variant="primarySubtle" className="text-[9px] font-normal px-1.5 py-0.2 shrink-0">
+                                Akun Anda
+                              </Badge>
                             )}
                           </div>
+                          <p className="text-[11px] text-muted-foreground truncate">{item.email}</p>
                         </div>
-                      </td>
-
-                      {/* Linked Employee Info */}
-                      <td className="py-4 px-4 align-middle">
-                        {item.employee ? (
-                          <div className="space-y-0.5">
-                            <p className="text-xs font-semibold text-foreground">
-                              {item.employee.job_position || 'Jabatan Belum Diatur'}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {item.employee.department || 'Tanpa Dept'} · {item.employee.branch || 'Kantor Pusat'}
-                            </p>
-                            <span className="inline-block px-1.5 py-0.2 rounded bg-muted text-[10px] font-mono text-muted-foreground border border-border mt-0.5">
-                              NIK: {item.employee.employee_code}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="space-y-0.5">
-                            <Badge variant="outline" className="text-[11px] font-medium text-muted-foreground bg-muted/40">
-                              Akun Sistem Utama
-                            </Badge>
-                            <p className="text-[11px] text-muted-foreground">Tanpa Profil Karyawan ESS</p>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Role Selector */}
-                      <td className="py-4 px-4 align-middle">
-                        <div className="flex items-center gap-2">
-                          <select
-                            aria-label={`Ubah role untuk ${item.name}`}
-                            value={item.primary_role}
-                            disabled={isSelf || isBusy}
-                            onChange={(e) => handleQuickRoleChange(item, e.target.value as Role)}
-                            className={`px-2.5 py-1.5 min-h-[36px] rounded-xl border text-xs font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-primary ${
-                              ROLE_BADGE_STYLES[item.primary_role] || ROLE_BADGE_STYLES.Employee
-                            } ${isSelf || isBusy ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:opacity-90'}`}
-                            title={
-                              isSelf
-                                ? 'Role akun Anda sendiri tidak dapat diubah demi keamanan akses sistem'
-                                : 'Klik untuk mengubah role pengguna'
-                            }
-                          >
-                            {ROLE_OPTIONS.map((roleOpt) => (
-                              <option
-                                key={roleOpt}
-                                value={roleOpt}
-                                className="bg-card text-foreground font-medium"
-                              >
-                                {roleOpt}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </td>
-
-                      {/* Active Status */}
-                      <td className="py-4 px-4 align-middle">
-                        <button
-                          type="button"
-                          disabled={isSelf || isBusy}
-                          onClick={() => handleToggleActive(item)}
-                          title={
-                            isSelf
-                              ? 'Akun Anda sendiri tidak dapat dinonaktifkan demi stabilitas akses'
-                              : 'Klik untuk beralih status aktif / nonaktif'
-                          }
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] rounded-full text-xs font-semibold border transition-all ${
-                            item.is_active
-                              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20'
-                              : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20'
-                          } ${isSelf || isBusy ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
-                        >
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              item.is_active ? 'bg-emerald-500' : 'bg-rose-500'
-                            }`}
-                          />
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-normal shrink-0">
+                        <span className={`w-1.5 h-1.5 rounded-full ${item.is_active ? 'bg-emerald-500' : 'bg-muted-foreground'}`} />
+                        <span className={item.is_active ? 'text-foreground' : 'text-muted-foreground'}>
                           {item.is_active ? 'Aktif' : 'Nonaktif'}
-                        </button>
-                      </td>
+                        </span>
+                      </span>
+                    </div>
 
-                      {/* Actions */}
-                      <td className="py-4 px-4 sm:px-6 align-middle text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditModal(item)}
-                          className="gap-1.5 text-xs font-semibold cursor-pointer"
-                        >
-                          <Icon icon={Edit02Icon} size={14} className="text-muted-foreground" />
-                          <span>Kelola Akun</span>
-                        </Button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                    <div className="grid grid-cols-2 gap-2 text-[11px] bg-muted/20 p-2.5 rounded-xl border border-border/60">
+                      <div>
+                        <span className="text-muted-foreground block text-[10px]">Jabatan & Tim</span>
+                        <span className="font-normal text-foreground truncate block">
+                          {item.employee?.job_position || (item.employee ? 'Karyawan' : 'Akun Sistem')}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-[10px]">Peran (Role)</span>
+                        <span className="font-normal text-foreground truncate block">
+                          {item.primary_role}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(item)}
+                        className="h-7.5 px-3 text-xs font-normal gap-1 cursor-pointer rounded-lg border border-border hover:bg-muted flex-1 flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground"
+                      >
+                        <Icon icon={Edit02Icon} size={13} />
+                        <span>Kelola</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSelf || isBusy}
+                        onClick={() => handleToggleActive(item)}
+                        className={`h-7.5 px-3 text-xs font-normal rounded-lg border transition-colors flex-1 flex items-center justify-center ${
+                          isSelf
+                            ? 'opacity-40 cursor-not-allowed border-border/40 text-muted-foreground'
+                            : item.is_active
+                            ? 'border-border text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer'
+                            : 'border-border text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/10 cursor-pointer'
+                        }`}
+                      >
+                        <span>{item.is_active ? 'Nonaktifkan' : 'Aktifkan'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredUsers.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[10, 25, 50, 100]}
+          />
+        </>
+      )}
       </Card>
 
-      {/* Role Scope & Authority Reference Matrix */}
-      <Card className="p-5 bg-card border-border shadow-xs">
-        <div className="flex items-center justify-between mb-3.5">
-          <div className="space-y-0.5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Matriks Hierarki & Cakupan Wewenang Role (RBAC)
-            </h3>
-            <p className="text-xs text-muted-foreground/80">
-              Referensi pembagian tanggung jawab operasional dan batasan hak akses di HRIS Enterprise.
-            </p>
-          </div>
+      {/* Role Guide Matrix - Matches Peraturan Denda Policy Reference */}
+      <Card className="p-5 rounded-2xl border border-border bg-muted/30 shadow-xs space-y-3">
+        <div className="flex items-center space-x-2 text-primary">
+          <Icon icon={InformationCircleIcon} size={18} />
+          <CardTitle className="text-sm font-semibold text-foreground">
+            Panduan Hak Akses & Matriks Kewenangan Peran
+          </CardTitle>
         </div>
+        <CardDescription className="text-xs text-muted-foreground font-normal">
+          Ringkasan wewenang dan cakupan akses setiap role di sistem HRIS Enterprise.
+        </CardDescription>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
           {ROLE_OPTIONS.map((role) => (
-            <div key={role} className="p-3.5 rounded-xl bg-muted/40 border border-border space-y-2">
-              <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-semibold border ${ROLE_BADGE_STYLES[role]}`}>
+            <div key={role} className="p-3 rounded-xl bg-card border border-border space-y-1">
+              <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold border ${ROLE_BADGE_STYLES[role]}`}>
                 {role}
               </span>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
                 {ROLE_DESCRIPTIONS[role]}
               </p>
             </div>
@@ -802,50 +911,97 @@ export const UserRoleManagement: React.FC = () => {
         </div>
       </Card>
 
-      {/* Create / Edit User Modal Dialog */}
+      {/* Create / Edit User Modal Dialog - Balanced, compact, fits 100% desktop perfectly without overflowing top/bottom */}
       {isModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in overflow-y-auto"
           onClick={() => setIsModalOpen(false)}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="user-modal-title"
-            className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+            className="relative bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-md my-auto max-h-[86vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="px-6 py-4.5 border-b border-border flex items-center justify-between bg-card">
+            {/* Modal Header - Fixed Top */}
+            <div className="px-5 py-3 border-b border-border flex items-center justify-between shrink-0 bg-card">
               <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <Badge variant="dark" className="text-[10px] px-1.5 py-0.2">
+                <div className="flex items-center gap-1.5">
+                  <Badge variant="dark" className="text-[9px] px-1.5 py-0.2">
                     Superadmin
                   </Badge>
-                  <h3 id="user-modal-title" className="text-base font-bold text-foreground">
-                    {editingUser ? 'Kelola Akun & Hak Akses' : 'Tambah Akun Pengguna Baru'}
+                  <h3 id="user-modal-title" className="text-sm font-bold text-foreground">
+                    {editingUser ? 'Kelola Akun Pengguna' : 'Tambah Pengguna Baru'}
                   </h3>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[11px] text-muted-foreground">
                   {editingUser
-                    ? `Perbarui identitas, penetapan role, atau atur ulang kata sandi untuk ${editingUser.name}.`
-                    : 'Daftarkan pengguna baru ke dalam sistem dan tentukan hak akses peran.'}
+                    ? `Perbarui profil, role, atau kata sandi untuk ${editingUser.name}.`
+                    : 'Daftarkan pengguna baru dan tentukan hak akses peran.'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition-colors"
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition-colors"
                 aria-label="Tutup jendela modal"
               >
-                <Icon icon={Cancel01Icon} size={18} />
+                <Icon icon={Cancel01Icon} size={16} />
               </button>
             </div>
 
-            {/* Modal Form */}
-            <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
+            {/* Modal Form Body - Scrollable if screen is very short, but compact enough to fit without scrolling on standard screens */}
+            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto px-5 py-3.5 space-y-3 text-xs">
+              {/* Compact Avatar Upload Field with Interactive Crop */}
+              <div className="flex items-center gap-3 p-2.5 bg-muted/30 rounded-xl border border-border">
+                <Avatar src={avatarPreview} name={formData.name || 'User'} size="lg" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[11px] font-semibold text-foreground">Foto Avatar / Profil</p>
+                      <p className="text-[10px] text-muted-foreground">Format JPG, PNG, WebP (maks. 1 MB)</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <label
+                        htmlFor="admin-avatar-upload"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-background border border-border hover:bg-muted text-[11px] font-medium text-foreground cursor-pointer transition-colors shadow-2xs"
+                      >
+                        <Icon icon={Camera01Icon} size={12} />
+                        <span>{avatarPreview ? 'Ganti Foto' : 'Pilih Foto'}</span>
+                      </label>
+                      {avatarPreview && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (cropSourceImage) {
+                              setIsCropModalOpen(true)
+                            } else if (avatarPreview) {
+                              setCropSourceImage(avatarPreview)
+                              setIsCropModalOpen(true)
+                            }
+                          }}
+                          className="px-2 py-1 rounded-md bg-muted/80 hover:bg-muted text-[10px] font-medium text-foreground border border-border cursor-pointer transition-colors"
+                          title="Sesuaikan posisi foto"
+                        >
+                          Atur Posisi
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/jpg"
+                    id="admin-avatar-upload"
+                    className="hidden"
+                    onChange={handleAvatarSelect}
+                  />
+                </div>
+              </div>
+
+              {/* Nama Lengkap */}
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                <label className="block text-[11px] font-semibold text-foreground mb-1">
                   Nama Lengkap <span className="text-destructive">*</span>
                 </label>
                 <Input
@@ -854,13 +1010,14 @@ export const UserRoleManagement: React.FC = () => {
                   value={formData.name}
                   onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                   placeholder="Contoh: Ahmad Fauzi"
-                  className="h-10 text-sm"
+                  className="h-8.5 text-xs rounded-lg"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* Email & Telepon in 2 Columns */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">
+                  <label className="block text-[11px] font-semibold text-foreground mb-1">
                     Alamat Email <span className="text-destructive">*</span>
                   </label>
                   <Input
@@ -869,12 +1026,12 @@ export const UserRoleManagement: React.FC = () => {
                     value={formData.email}
                     onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                     placeholder="nama@perusahaan.com"
-                    className="h-10 text-sm"
+                    className="h-8.5 text-xs rounded-lg"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">
+                  <label className="block text-[11px] font-semibold text-foreground mb-1">
                     Nomor Telepon
                   </label>
                   <Input
@@ -882,36 +1039,43 @@ export const UserRoleManagement: React.FC = () => {
                     value={formData.phone}
                     onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
                     placeholder="0812xxxxxxxx"
-                    className="h-10 text-sm"
+                    className="h-8.5 text-xs rounded-lg"
                   />
                 </div>
               </div>
 
+              {/* Role Selection with Custom Chevron */}
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  Role Sistem (RBAC) <span className="text-destructive">*</span>
+                <label className="block text-[11px] font-semibold text-foreground mb-1">
+                  Role Akses <span className="text-destructive">*</span>
                 </label>
-                <select
-                  value={formData.role}
-                  disabled={Boolean(editingUser && currentUser?.id === editingUser.id)}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, role: e.target.value as Role }))}
-                  className="w-full h-10 px-3 rounded-xl border border-input bg-background text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 cursor-pointer"
-                >
-                  {ROLE_OPTIONS.map((roleOpt) => (
-                    <option key={roleOpt} value={roleOpt}>
-                      {roleOpt}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed bg-muted/40 p-2.5 rounded-lg border border-border">
+                <div className="relative">
+                  <select
+                    value={formData.role}
+                    disabled={Boolean(editingUser && currentUser?.id === editingUser.id)}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, role: e.target.value as Role }))}
+                    className="w-full h-8.5 pl-3 pr-8 rounded-lg border border-input bg-background text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-60 cursor-pointer appearance-none"
+                  >
+                    {ROLE_OPTIONS.map((roleOpt) => (
+                      <option key={roleOpt} value={roleOpt}>
+                        {roleOpt}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60">
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-snug bg-muted/40 px-2 py-1.5 rounded-md border border-border">
                   {ROLE_DESCRIPTIONS[formData.role]}
                 </p>
               </div>
 
+              {/* Password Field */}
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                <label className="block text-[11px] font-semibold text-foreground mb-1">
                   <span className="inline-flex items-center gap-1.5">
-                    <Icon icon={LockPasswordIcon} size={14} className="text-muted-foreground" />
+                    <Icon icon={LockPasswordIcon} size={13} className="text-muted-foreground" />
                     <span>{editingUser ? 'Kata Sandi Baru (Opsional)' : 'Kata Sandi Awal'}</span>
                     {!editingUser && <span className="text-destructive">*</span>}
                   </span>
@@ -925,62 +1089,66 @@ export const UserRoleManagement: React.FC = () => {
                     onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
                     placeholder={
                       editingUser
-                        ? 'Kosongkan jika tidak ingin merubah sandi'
+                        ? 'Kosongkan jika tidak ingin mengubah sandi'
                         : 'Minimal 6 karakter'
                     }
-                    className="h-10 pr-10 text-sm"
+                    className="h-8.5 pr-8 text-xs rounded-lg"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
                     aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                   >
-                    <Icon icon={showPassword ? EyeOffIcon : EyeIcon} size={16} />
+                    <Icon icon={showPassword ? EyeOffIcon : EyeIcon} size={14} />
                   </button>
                 </div>
               </div>
 
+              {/* Active Toggle */}
               {(!editingUser || currentUser?.id !== editingUser.id) && (
-                <label className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border cursor-pointer hover:bg-muted/60 transition-colors">
+                <label className="flex items-center gap-2.5 p-2 rounded-lg bg-muted/30 border border-border cursor-pointer hover:bg-muted/50 transition-colors">
                   <input
                     type="checkbox"
                     checked={formData.is_active}
                     onChange={(e) => setFormData((prev) => ({ ...prev, is_active: e.target.checked }))}
-                    className="w-4 h-4 rounded border-input text-primary focus:ring-primary accent-primary"
+                    className="w-3.5 h-3.5 rounded border-input text-primary focus:ring-primary accent-primary"
                   />
                   <div>
-                    <p className="text-xs font-semibold text-foreground">Akun Aktif (Dapat Login)</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Bila dinonaktifkan, sesi pengguna langsung dicabut dan tidak dapat masuk ke sistem.
+                    <p className="text-xs font-semibold text-foreground">Akun Aktif</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Pengguna yang dinonaktifkan tidak dapat masuk ke sistem.
                     </p>
                   </div>
                 </label>
               )}
 
-              <div className="pt-3 border-t border-border flex items-center justify-end gap-2.5">
+              {/* Modal Footer - Fixed at Bottom */}
+              <div className="pt-2.5 border-t border-border flex items-center justify-end gap-2 shrink-0">
                 <Button
                   type="button"
                   variant="outline"
+                  size="sm"
                   onClick={() => setIsModalOpen(false)}
-                  className="cursor-pointer text-xs font-semibold"
+                  className="h-8 px-3 text-xs font-medium cursor-pointer rounded-lg"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="cursor-pointer text-xs font-semibold gap-1.5"
+                  size="sm"
+                  className="h-8 px-4 text-xs font-semibold gap-1.5 cursor-pointer rounded-lg"
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       <span>Menyimpan...</span>
                     </>
                   ) : editingUser ? (
                     'Simpan Perubahan'
                   ) : (
-                    'Buat Akun'
+                    'Tambah Pengguna'
                   )}
                 </Button>
               </div>
@@ -988,6 +1156,16 @@ export const UserRoleManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Avatar Crop & Adjustment Modal */}
+      <AvatarCropModal
+        isOpen={isCropModalOpen}
+        imageSrc={cropSourceImage}
+        onClose={() => setIsCropModalOpen(false)}
+        onCropComplete={handleCropComplete}
+        maxOutputDimension={512}
+        maxFileSizeBytes={1024 * 1024}
+      />
     </div>
   )
 }

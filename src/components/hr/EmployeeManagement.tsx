@@ -7,9 +7,18 @@ import {
   EyeIcon,
   Cancel01Icon,
   CheckmarkCircle01Icon,
+  Camera01Icon,
+  File01Icon,
+  SparklesIcon,
+  RefreshIcon,
+  CreditCardIcon,
+  Edit01Icon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
-import api from '../../services/api'
+import { Avatar } from '../common/Avatar'
+import { AvatarCropModal } from '../common/AvatarCropModal'
+import { Pagination } from '../common/Pagination'
+import api, { employeeService } from '../../services/api'
 import { useToast } from '../../context/ToastContext'
 import type { Employee, Department, JobPosition } from '../../types'
 
@@ -23,10 +32,82 @@ export const EmployeeManagement: React.FC = () => {
   const [search, setSearch] = useState<string>('')
   const [selectedDept, setSelectedDept] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [pageSize, setPageSize] = useState<number>(10)
 
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [showAddModal, setShowAddModal] = useState<boolean>(false)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [contractFile, setContractFile] = useState<File | null>(null)
+  const [isCropModalOpen, setIsCropModalOpen] = useState<boolean>(false)
+  const [cropSourceImage, setCropSourceImage] = useState<string | null>(null)
+  const [cropTarget, setCropTarget] = useState<'create' | 'detail'>('create')
+  const [isGeneratingNik, setIsGeneratingNik] = useState<boolean>(false)
+  const [isEditingBank, setIsEditingBank] = useState<boolean>(false)
+  const [bankEditData, setBankEditData] = useState({
+    bank_name: 'BCA',
+    bank_account_number: '',
+    bank_account_holder: '',
+  })
+  const [isSavingBank, setIsSavingBank] = useState<boolean>(false)
+
+  const handleOpenDetail = (emp: Employee) => {
+    setSelectedEmployee(emp)
+    setIsEditingBank(false)
+    setBankEditData({
+      bank_name: emp.bank_name || 'BCA',
+      bank_account_number: emp.bank_account_number || '',
+      bank_account_holder: emp.bank_account_holder || emp.user?.name || '',
+    })
+  }
+
+  const handleSaveBank = async () => {
+    if (!selectedEmployee) return
+    setIsSavingBank(true)
+    try {
+      const res = await employeeService.updateEmployee(selectedEmployee.id, {
+        bank_name: bankEditData.bank_name,
+        bank_account_number: bankEditData.bank_account_number,
+        bank_account_holder: bankEditData.bank_account_holder,
+      })
+      const updated = res.data?.data
+      if (updated) {
+        setSelectedEmployee((prev) => (prev ? { ...prev, ...updated } : null))
+        setEmployees((prev) =>
+          prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e))
+        )
+        toast.success('Rekening Disimpan', 'Data perbankan karyawan berhasil diperbarui.')
+        setIsEditingBank(false)
+      }
+    } catch (err) {
+      console.error('Error updating bank info:', err)
+      toast.error('Gagal Menyimpan', 'Terjadi kesalahan saat memperbarui data rekening.')
+    } finally {
+      setIsSavingBank(false)
+    }
+  }
+
+  const handleGenerateNik = async () => {
+    setIsGeneratingNik(true)
+    try {
+      const res = await employeeService.getNextNik()
+      if (res.data?.data?.nik) {
+        setFormData((prev) => ({ ...prev, nik: res.data.data.nik }))
+        return res.data.data.nik
+      }
+    } catch (err) {
+      console.warn('Fallback to local NIK generation:', err)
+      const year = new Date().getFullYear()
+      const seq = String(employees.length + 1).padStart(3, '0')
+      const fallbackNik = `EMP-${year}-${seq}`
+      setFormData((prev) => ({ ...prev, nik: fallbackNik }))
+      return fallbackNik
+    } finally {
+      setIsGeneratingNik(false)
+    }
+  }
 
   const [formData, setFormData] = useState({
     name: '',
@@ -62,9 +143,27 @@ export const EmployeeManagement: React.FC = () => {
         api.get('/departments'),
         api.get('/job-positions'),
       ])
-      setEmployees(empRes.data?.data || [])
-      setDepartments(deptRes.data?.data || [])
-      setPositions(posRes.data?.data || [])
+      const emps = Array.isArray(empRes.data?.data) ? empRes.data.data : []
+      const depts = Array.isArray(deptRes.data?.data) ? deptRes.data.data : []
+      const pos = Array.isArray(posRes.data?.data) ? posRes.data.data : []
+
+      setEmployees(emps)
+      setDepartments(depts)
+      setPositions(pos)
+
+      // Initialize default department & position in form if empty
+      if (depts.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          department_id: prev.department_id || String(depts[0].id),
+        }))
+      }
+      if (pos.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          job_position_id: prev.job_position_id || String(pos[0].id),
+        }))
+      }
     } catch (err) {
       console.error('Error loading employee master data:', err)
       toast.error('Gagal Memuat Data', 'Tidak dapat memuat master data karyawan.')
@@ -78,6 +177,7 @@ export const EmployeeManagement: React.FC = () => {
   }, [])
 
   const filteredEmployees = useMemo(() => {
+    if (!Array.isArray(employees)) return []
     return employees.filter((emp) => {
       const name = emp.user?.name?.toLowerCase() || ''
       const email = emp.user?.email?.toLowerCase() || ''
@@ -94,12 +194,21 @@ export const EmployeeManagement: React.FC = () => {
     })
   }, [employees, search, selectedDept, selectedStatus])
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, selectedDept, selectedStatus])
+
+  const paginatedEmployees = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredEmployees.slice(start, start + pageSize)
+  }, [filteredEmployees, currentPage, pageSize])
+
   const handleCreateEmployee = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
     try {
-      const payload = {
+      const payload: Record<string, any> = {
         ...formData,
         department_id: Number(formData.department_id) || departments[0]?.id || 1,
         job_position_id: Number(formData.job_position_id) || positions[0]?.id || 1,
@@ -107,12 +216,28 @@ export const EmployeeManagement: React.FC = () => {
         contract_number: formData.contract_number || `CTR/${Date.now()}`,
       }
 
-      const res = await api.post('/employees', payload)
+      const formPayload = new FormData()
+      Object.entries(payload).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) {
+          formPayload.append(k, String(v))
+        }
+      })
+      if (avatarFile) {
+        formPayload.append('avatar', avatarFile)
+      }
+      if (contractFile) {
+        formPayload.append('document', contractFile)
+      }
+
+      const res = await employeeService.createEmployee(formPayload)
       toast.success(
         'Karyawan Berhasil Didaftarkan',
         `Profil ${res.data?.data?.user?.name || formData.name} telah disimpan ke database.`
       )
       setShowAddModal(false)
+      setAvatarFile(null)
+      setAvatarPreview(null)
+      setContractFile(null)
       loadData()
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Gagal menambahkan karyawan.'
@@ -157,6 +282,9 @@ export const EmployeeManagement: React.FC = () => {
                 job_position_id: String(positions[0]?.id || 1),
               }))
             }
+            if (!formData.nik) {
+              handleGenerateNik()
+            }
             setShowAddModal(true)
           }}
           className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg shadow-xs transition-colors text-xs shrink-0"
@@ -187,7 +315,7 @@ export const EmployeeManagement: React.FC = () => {
             className="bg-muted border border-border text-foreground text-xs font-normal rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="all">Semua Departemen</option>
-            {departments.map((d) => (
+            {(Array.isArray(departments) ? departments : []).map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
               </option>
@@ -239,90 +367,99 @@ export const EmployeeManagement: React.FC = () => {
             </span>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-foreground">
-              <thead className="bg-muted/40 text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider border-b border-border">
-                <tr>
-                  <th className="py-2.5 px-4">Karyawan</th>
-                  <th className="py-2.5 px-4">Departemen & Jabatan</th>
-                  <th className="py-2.5 px-4">Status Kepegawaian</th>
-                  <th className="py-2.5 px-4">Gaji Pokok Basis</th>
-                  <th className="py-2.5 px-4 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredEmployees.map((emp) => {
-                  const statusBadge =
-                    emp.employment_status === 'permanent'
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
-                      : emp.employment_status === 'contract'
-                      ? 'bg-primary/10 text-primary border-primary/20'
-                      : emp.employment_status === 'probation'
-                      ? 'bg-secondary text-secondary-foreground border-secondary/40'
-                      : 'bg-muted text-muted-foreground border-border'
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-foreground">
+                <thead className="bg-muted/40 text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider border-b border-border">
+                  <tr>
+                    <th className="py-2.5 px-4">Karyawan</th>
+                    <th className="py-2.5 px-4">Departemen & Jabatan</th>
+                    <th className="py-2.5 px-4">Status Kepegawaian</th>
+                    <th className="py-2.5 px-4">Gaji Pokok Basis</th>
+                    <th className="py-2.5 px-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedEmployees.map((emp) => {
+                    const statusBadge =
+                      emp.employment_status === 'permanent'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
+                        : emp.employment_status === 'contract'
+                        ? 'bg-primary/10 text-primary border-primary/20'
+                        : emp.employment_status === 'probation'
+                        ? 'bg-secondary text-secondary-foreground border-secondary/40'
+                        : 'bg-muted text-muted-foreground border-border'
 
-                  const statusLabel =
-                    emp.employment_status === 'permanent'
-                      ? 'Tetap (PKWTT)'
-                      : emp.employment_status === 'contract'
-                      ? 'Kontrak (PKWT)'
-                      : emp.employment_status === 'probation'
-                      ? 'Probation'
-                      : 'Magang'
+                    const statusLabel =
+                      emp.employment_status === 'permanent'
+                        ? 'Tetap (PKWTT)'
+                        : emp.employment_status === 'contract'
+                        ? 'Kontrak (PKWT)'
+                        : emp.employment_status === 'probation'
+                        ? 'Probation'
+                        : 'Magang'
 
-                  return (
-                    <tr key={emp.id} className="hover:bg-muted/40 transition-colors">
-                      <td className="py-2.5 px-4">
-                        <div className="flex items-center space-x-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center font-medium text-primary text-xs shrink-0">
-                            {emp.user?.name ? emp.user.name.charAt(0).toUpperCase() : 'K'}
-                          </div>
-                          <div>
-                            <div className="font-normal text-foreground text-xs">
-                              {emp.user?.name}
+                    return (
+                      <tr key={emp.id} className="hover:bg-muted/40 transition-colors">
+                        <td className="py-2.5 px-4">
+                          <div className="flex items-center space-x-2.5">
+                            <Avatar src={emp.user?.avatar_url} name={emp.user?.name} size="sm" />
+                            <div>
+                              <div className="font-normal text-foreground text-xs">
+                                {emp.user?.name}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground flex items-center space-x-1.5 font-normal">
+                                <span>NIK: {emp.nik}</span>
+                                <span>•</span>
+                                <span>{emp.user?.email}</span>
+                              </div>
                             </div>
-                            <div className="text-[10px] text-muted-foreground flex items-center space-x-1.5 font-normal">
-                              <span>NIK: {emp.nik}</span>
-                              <span>•</span>
-                              <span>{emp.user?.email}</span>
-                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-4">
-                        <div className="font-normal text-foreground text-xs">
-                          {emp.job_position?.title || 'Staff'}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground font-normal">
-                          {emp.department?.name || 'Departemen'}
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-medium border ${statusBadge}`}
-                        >
-                          {statusLabel}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-4 font-semibold text-foreground text-xs">
-                        {formatRupiah(emp.active_contract?.basic_salary)}
-                      </td>
-                      <td className="py-2.5 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedEmployee(emp)}
-                          className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors border border-border"
-                        >
-                          <Icon icon={EyeIcon} size={13} />
-                          <span>Detail</span>
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <div className="font-normal text-foreground text-xs">
+                            {emp.job_position?.title || 'Staff'}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground font-normal">
+                            {emp.department?.name || 'Departemen'}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-medium border ${statusBadge}`}
+                          >
+                            {statusLabel}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-4 font-semibold text-foreground text-xs">
+                          {formatRupiah(emp.active_contract?.basic_salary)}
+                        </td>
+                        <td className="py-2.5 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetail(emp)}
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors border border-border"
+                          >
+                            <Icon icon={EyeIcon} size={13} />
+                            <span>Detail</span>
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredEmployees.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[10, 25, 50, 100]}
+            />
+          </>
         )}
       </div>
 
@@ -331,8 +468,42 @@ export const EmployeeManagement: React.FC = () => {
           <div className="bg-card rounded-2xl max-w-2xl w-full p-6 shadow-xl border border-border max-h-[90vh] overflow-y-auto space-y-6">
             <div className="flex items-start justify-between border-b border-border pb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-primary text-white font-medium text-sm flex items-center justify-center">
-                  {selectedEmployee.user?.name?.charAt(0).toUpperCase()}
+                <div className="relative group w-12 h-12 rounded-xl overflow-hidden shrink-0">
+                  <Avatar src={selectedEmployee.user?.avatar_url} name={selectedEmployee.user?.name} size="lg" className="w-full h-full" />
+                  <label
+                    htmlFor="detail-avatar-change"
+                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-opacity text-white text-[9px] font-medium z-10"
+                    title="Ubah Foto Profil"
+                  >
+                    <Icon icon={Camera01Icon} size={14} />
+                    <span>Ubah</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="detail-avatar-change"
+                    accept="image/png,image/jpeg,image/webp,image/jpg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      if (!file.type.startsWith('image/')) {
+                        toast.error('Format Tidak Didukung', 'Harap pilih file gambar.')
+                        return
+                      }
+                      if (file.size > 10 * 1024 * 1024) {
+                        toast.error('File Terlalu Besar', 'Maksimal ukuran foto 10 MB.')
+                        return
+                      }
+                      const reader = new FileReader()
+                      reader.onload = () => {
+                        setCropSourceImage(reader.result as string)
+                        setCropTarget('detail')
+                        setIsCropModalOpen(true)
+                      }
+                      reader.readAsDataURL(file)
+                      e.target.value = ''
+                    }}
+                  />
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-foreground">
@@ -383,10 +554,31 @@ export const EmployeeManagement: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-2">
-                <div className="font-medium text-muted-foreground uppercase tracking-wider text-[10px]">
-                  Payroll & Perbankan
+              <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium text-muted-foreground uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                    <Icon icon={CreditCardIcon} size={12} />
+                    <span>Payroll & Perbankan</span>
+                  </div>
+                  {!isEditingBank ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBankEditData({
+                          bank_name: selectedEmployee.bank_name || 'BCA',
+                          bank_account_number: selectedEmployee.bank_account_number || '',
+                          bank_account_holder: selectedEmployee.bank_account_holder || selectedEmployee.user?.name || '',
+                        })
+                        setIsEditingBank(true)
+                      }}
+                      className="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline cursor-pointer"
+                    >
+                      <Icon icon={Edit01Icon} size={11} />
+                      <span>Ubah Bank</span>
+                    </button>
+                  ) : null}
                 </div>
+
                 <div>
                   <span className="text-muted-foreground font-normal">Gaji Pokok: </span>
                   <span className="font-semibold text-primary">
@@ -399,18 +591,103 @@ export const EmployeeManagement: React.FC = () => {
                     {selectedEmployee.active_contract?.contract_number || '-'}
                   </span>
                 </div>
-                <div>
-                  <span className="text-muted-foreground font-normal">Bank Penerima: </span>
-                  <span className="font-normal text-foreground">
-                    {selectedEmployee.bank_name || 'BCA'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground font-normal">No Rekening: </span>
-                  <span className="font-normal text-foreground">
-                    {selectedEmployee.bank_account_number || '-'}
-                  </span>
-                </div>
+
+                {!isEditingBank ? (
+                  <>
+                    <div>
+                      <span className="text-muted-foreground font-normal">Bank Penerima: </span>
+                      <span className="font-medium text-foreground">
+                        {selectedEmployee.bank_name || 'BCA'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground font-normal">No Rekening: </span>
+                      <span className="font-mono text-xs font-semibold text-foreground">
+                        {selectedEmployee.bank_account_number || '-'}
+                      </span>
+                    </div>
+                    {selectedEmployee.bank_account_holder && (
+                      <div>
+                        <span className="text-muted-foreground font-normal">Atas Nama: </span>
+                        <span className="font-normal text-foreground">
+                          {selectedEmployee.bank_account_holder}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="pt-2 border-t border-border/80 space-y-2">
+                    <div>
+                      <label className="block text-[10px] uppercase font-medium text-muted-foreground mb-1">
+                        Bank Penerima
+                      </label>
+                      <select
+                        value={bankEditData.bank_name}
+                        onChange={(e) => setBankEditData({ ...bankEditData, bank_name: e.target.value })}
+                        className="w-full px-2 py-1.5 rounded-lg bg-background border border-border text-foreground text-xs focus:ring-1 focus:ring-primary font-normal"
+                      >
+                        {['BCA', 'Bank Mandiri', 'BNI', 'BRI', 'BSI', 'CIMB Niaga', 'Bank Permata', 'Bank Danamon', 'Bank Mega', 'BTN', 'Bank Jago', 'Seabank', 'Lainnya'].map((b) => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-medium text-muted-foreground mb-1">
+                        Nomor Rekening
+                      </label>
+                      <input
+                        type="text"
+                        value={bankEditData.bank_account_number}
+                        onChange={(e) => setBankEditData({ ...bankEditData, bank_account_number: e.target.value })}
+                        placeholder="misal: 1234567890"
+                        className="w-full px-2 py-1.5 rounded-lg bg-background border border-border text-foreground text-xs font-mono focus:ring-1 focus:ring-primary font-normal"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-medium text-muted-foreground mb-1">
+                        Atas Nama Rekening
+                      </label>
+                      <input
+                        type="text"
+                        value={bankEditData.bank_account_holder}
+                        onChange={(e) => setBankEditData({ ...bankEditData, bank_account_holder: e.target.value })}
+                        placeholder={selectedEmployee.user?.name || 'Nama Pemilik Rekening'}
+                        className="w-full px-2 py-1.5 rounded-lg bg-background border border-border text-foreground text-xs focus:ring-1 focus:ring-primary font-normal"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleSaveBank}
+                        disabled={isSavingBank}
+                        className="px-2.5 py-1 bg-primary text-primary-foreground text-[11px] font-medium rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        {isSavingBank ? 'Menyimpan...' : 'Simpan Rekening'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingBank(false)}
+                        className="px-2.5 py-1 bg-muted text-muted-foreground text-[11px] font-medium rounded-md hover:bg-muted/80 transition-colors cursor-pointer"
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {selectedEmployee.active_contract?.document_url && (
+                  <div className="pt-1 border-t border-border/60">
+                    <a
+                      href={selectedEmployee.active_contract.document_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-1.5 text-primary hover:underline font-medium text-[11px]"
+                    >
+                      <Icon icon={File01Icon} size={13} />
+                      <span>Lihat Dokumen Kontrak</span>
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -449,6 +726,67 @@ export const EmployeeManagement: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateEmployee} className="space-y-4 text-xs">
+              {/* Avatar Upload Field with Interactive Crop */}
+              <div className="flex items-center gap-4 p-3 bg-muted/30 rounded-xl border border-border">
+                <Avatar src={avatarPreview} name={formData.name || 'Karyawan'} size="lg" />
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs font-semibold text-foreground mb-1">
+                    Foto Avatar Karyawan (Opsional)
+                  </label>
+                  <p className="text-[11px] text-muted-foreground mb-2">
+                    Format JPG, PNG, atau WebP (maks. 1 MB).
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/jpg"
+                    id="employee-avatar-upload"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      if (!file.type.startsWith('image/')) {
+                        toast.error('Format Tidak Didukung', 'Harap pilih file gambar.')
+                        return
+                      }
+                      if (file.size > 10 * 1024 * 1024) {
+                        toast.error('File Terlalu Besar', 'Maksimal ukuran foto 10 MB.')
+                        return
+                      }
+                      const reader = new FileReader()
+                      reader.onload = () => {
+                        setCropSourceImage(reader.result as string)
+                        setCropTarget('create')
+                        setIsCropModalOpen(true)
+                      }
+                      reader.readAsDataURL(file)
+                      e.target.value = ''
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor="employee-avatar-upload"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-background border border-border hover:bg-muted text-xs font-medium text-foreground cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Icon icon={Camera01Icon} size={13} />
+                      <span>{avatarPreview ? 'Ganti Foto' : 'Pilih Foto'}</span>
+                    </label>
+                    {avatarPreview && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCropSourceImage(avatarPreview)
+                          setCropTarget('create')
+                          setIsCropModalOpen(true)
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-xs font-medium text-foreground border border-border cursor-pointer transition-colors"
+                      >
+                        Atur Posisi
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-normal text-muted-foreground mb-1 uppercase tracking-wider text-[11px]">
@@ -479,17 +817,45 @@ export const EmployeeManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-medium text-foreground mb-1 uppercase tracking-wider text-[11px]">
-                    Nomor Induk Karyawan (NIK) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.nik}
-                    onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-normal text-xs"
-                    placeholder="EMP-2026-009"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-medium text-foreground uppercase tracking-wider text-[11px]">
+                      Nomor Induk Karyawan (NIK) *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleGenerateNik}
+                      disabled={isGeneratingNik}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <Icon icon={SparklesIcon} size={12} className={isGeneratingNik ? 'animate-spin' : ''} />
+                      <span>{isGeneratingNik ? 'Membuat...' : 'Buat Otomatis'}</span>
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      value={formData.nik}
+                      onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
+                      className="w-full px-3 py-2 pr-16 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono text-xs font-medium"
+                      placeholder="EMP-2026-005"
+                    />
+                    <div className="absolute inset-y-0 right-1.5 flex items-center">
+                      <button
+                        type="button"
+                        onClick={handleGenerateNik}
+                        disabled={isGeneratingNik}
+                        title="Regenerasi NIK Otomatis"
+                        className="px-2 py-1 text-[10px] font-semibold bg-primary/10 text-primary hover:bg-primary/20 rounded transition-colors flex items-center gap-1 disabled:opacity-50"
+                      >
+                        <Icon icon={RefreshIcon} size={10} className={isGeneratingNik ? 'animate-spin' : ''} />
+                        <span>Auto</span>
+                      </button>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    Format otomatis <span className="font-mono font-medium text-foreground">EMP-YYYY-XXX</span> (tetap dapat diedit manual jika ada format khusus).
+                  </p>
                 </div>
 
                 <div>
@@ -516,7 +882,7 @@ export const EmployeeManagement: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-normal text-xs"
                   >
-                    {departments.map((d) => (
+                    {(Array.isArray(departments) ? departments : []).map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name} ({d.code})
                       </option>
@@ -533,7 +899,7 @@ export const EmployeeManagement: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, job_position_id: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-normal text-xs"
                   >
-                    {positions.map((p) => (
+                    {(Array.isArray(positions) ? positions : []).map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.title}
                       </option>
@@ -570,6 +936,73 @@ export const EmployeeManagement: React.FC = () => {
                     className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-normal text-xs"
                   />
                 </div>
+
+                <div>
+                  <label className="block font-medium text-foreground mb-1 uppercase tracking-wider text-[11px]">
+                    Bank Penerima (Payroll)
+                  </label>
+                  <select
+                    value={formData.bank_name}
+                    onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-normal text-xs"
+                  >
+                    {['BCA', 'Bank Mandiri', 'BNI', 'BRI', 'BSI', 'CIMB Niaga', 'Bank Permata', 'Bank Danamon', 'Bank Mega', 'BTN', 'Bank Jago', 'Seabank', 'Lainnya'].map((b) => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-medium text-foreground mb-1 uppercase tracking-wider text-[11px]">
+                    Nomor Rekening Bank
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.bank_account_number}
+                    onChange={(e) => setFormData({ ...formData, bank_account_number: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono text-xs"
+                    placeholder="misal: 1234567890"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-medium text-foreground uppercase tracking-wider text-[11px]">
+                      Password Akun Karyawan
+                    </label>
+                    <span className="text-[10px] text-muted-foreground font-normal">
+                      Default: <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono font-semibold">password</code>
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono text-xs"
+                    placeholder="password"
+                  />
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    Password ini digunakan karyawan untuk pertama kali login (dapat diganti di profil).
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block font-medium text-foreground mb-1 uppercase tracking-wider text-[11px]">
+                    Dokumen Perjanjian Kerja / Kontrak (PDF/Gambar - Opsional)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => setContractFile(e.target.files?.[0] || null)}
+                    className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-normal file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                  />
+                  {contractFile && (
+                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center space-x-1">
+                      <Icon icon={File01Icon} size={13} />
+                      <span>{contractFile.name} siap diunggah ke storage cloud.</span>
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center justify-end space-x-2 pt-4 border-t border-border">
@@ -593,6 +1026,39 @@ export const EmployeeManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Reusable Avatar Crop & Compression Modal */}
+      <AvatarCropModal
+        isOpen={isCropModalOpen}
+        imageSrc={cropSourceImage}
+        onClose={() => setIsCropModalOpen(false)}
+        onCropComplete={async (croppedFile, previewUrl) => {
+          if (cropTarget === 'create') {
+            setAvatarFile(croppedFile)
+            setAvatarPreview(previewUrl)
+            const sizeKb = Math.round(croppedFile.size / 1024)
+            toast.success('Foto Disesuaikan', `Foto berhasil dipotong dan dikompres (${sizeKb} KB, maks 1 MB).`)
+          } else if (cropTarget === 'detail' && selectedEmployee) {
+            try {
+              const form = new FormData()
+              form.append('avatar', croppedFile)
+              const res = await employeeService.updateEmployee(selectedEmployee.id, form)
+              if (res.data?.success) {
+                const updatedEmp = res.data.data
+                setSelectedEmployee(updatedEmp)
+                setEmployees((prev) =>
+                  prev.map((emp) => (emp.id === updatedEmp.id ? updatedEmp : emp))
+                )
+                toast.success('Foto Profil Diperbarui', 'Foto avatar karyawan berhasil dikompres dan disimpan.')
+              }
+            } catch (err: any) {
+              toast.error('Gagal Unggah Foto', err.response?.data?.message || 'Gagal mengunggah foto.')
+            }
+          }
+        }}
+        maxOutputDimension={512}
+        maxFileSizeBytes={1024 * 1024}
+      />
     </div>
   )
 }

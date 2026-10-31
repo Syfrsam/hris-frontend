@@ -37,10 +37,10 @@ export const HrDashboardAnalytics: React.FC<HrDashboardAnalyticsProps> = ({
         api.get(`/attendances/anomalies?date=${today}`),
         api.get('/payrolls/periods'),
       ])
-      setEmployees(empRes.data?.data || [])
-      setDepartments(deptRes.data?.data || [])
-      setAnomalies(anomRes.data?.data || [])
-      setPeriods(perRes.data?.data || [])
+      setEmployees(Array.isArray(empRes.data?.data) ? empRes.data.data : [])
+      setDepartments(Array.isArray(deptRes.data?.data) ? deptRes.data.data : [])
+      setAnomalies(Array.isArray(anomRes.data?.data) ? anomRes.data.data : [])
+      setPeriods(Array.isArray(perRes.data?.data) ? perRes.data.data : [])
     } catch (err) {
       console.error('Error fetching analytics:', err)
     } finally {
@@ -53,16 +53,17 @@ export const HrDashboardAnalytics: React.FC<HrDashboardAnalyticsProps> = ({
   }, [])
 
   const stats = useMemo(() => {
-    const totalEmployees = employees.length
-    const totalDepts = departments.length
-    const totalAnomalies = anomalies.length
+    const totalEmployees = Array.isArray(employees) ? employees.length : 0
+    const totalDepts = Array.isArray(departments) ? departments.length : 0
+    const totalAnomalies = Array.isArray(anomalies) ? anomalies.length : 0
 
-    const permanentCount = employees.filter((e) => e.employment_status === 'permanent').length
-    const contractCount = employees.filter((e) => e.employment_status === 'contract').length
-    const probationCount = employees.filter((e) => e.employment_status === 'probation').length
-    const internCount = employees.filter((e) => e.employment_status === 'intern').length
+    const validEmps = Array.isArray(employees) ? employees : []
+    const permanentCount = validEmps.filter((e) => e.employment_status === 'permanent').length
+    const contractCount = validEmps.filter((e) => e.employment_status === 'contract').length
+    const probationCount = validEmps.filter((e) => e.employment_status === 'probation').length
+    const internCount = validEmps.filter((e) => e.employment_status === 'intern').length
 
-    const deptDistribution = departments.map((d) => {
+    const deptDistribution = (Array.isArray(departments) ? departments : []).map((d) => {
       const count = employees.filter((e) => e.department?.id === d.id).length
       const percentage = totalEmployees > 0 ? Math.round((count / totalEmployees) * 100) : 0
       return { id: d.id, name: d.name, code: d.code, count, percentage }

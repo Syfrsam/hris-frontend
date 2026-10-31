@@ -8,16 +8,20 @@ import {
   Search01Icon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
+import { Pagination } from '../common/Pagination'
 import api from '../../services/api'
-import type { Attendance, ClockDetails } from '../../types'
+import type { Attendance, ClockDetails, PenaltySetting } from '../../types'
 
 export const AttendanceAudit: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   )
   const [anomalies, setAnomalies] = useState<Attendance[]>([])
+  const [penaltySetting, setPenaltySetting] = useState<PenaltySetting | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [search, setSearch] = useState<string>('')
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [pageSize, setPageSize] = useState<number>(10)
 
   const fetchAnomalies = async (date: string) => {
     setLoading(true)
@@ -25,6 +29,9 @@ export const AttendanceAudit: React.FC = () => {
       const res = await api.get(`/attendances/anomalies?date=${date}`)
       const data = res.data?.data || []
       setAnomalies(Array.isArray(data) ? data : [])
+      if (res.data?.penalty_setting) {
+        setPenaltySetting(res.data.penalty_setting)
+      }
     } catch (err) {
       console.error('Error fetching anomalies:', err)
       setAnomalies([])
@@ -35,7 +42,12 @@ export const AttendanceAudit: React.FC = () => {
 
   useEffect(() => {
     fetchAnomalies(selectedDate)
+    setCurrentPage(1)
   }, [selectedDate])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search])
 
   const getClockTimeString = (clock: ClockDetails | string | null | undefined): string => {
     if (!clock) return '-'
@@ -61,6 +73,11 @@ export const AttendanceAudit: React.FC = () => {
     })
   }, [anomalies, search])
 
+  const paginatedList = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filtered.slice(start, start + pageSize)
+  }, [filtered, currentPage, pageSize])
+
   const summary = useMemo(() => {
     const total = anomalies.length
     const late = anomalies.filter((a) => (a.late_minutes || 0) > 0).length
@@ -69,15 +86,65 @@ export const AttendanceAudit: React.FC = () => {
     return { total, late, noClockOut, totalLateMinutes }
   }, [anomalies])
 
+  const formatRupiah = (num: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(num || 0)
+  }
+
+  const renderPayrollConsequence = (lateMinutes: number) => {
+    if (!penaltySetting || !penaltySetting.is_active || penaltySetting.late_penalty_type === 'none') {
+      return (
+        <span className="text-[11px] font-normal text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-lg whitespace-nowrap">
+          Bebas Denda
+        </span>
+      )
+    }
+
+    if (lateMinutes <= (penaltySetting.grace_period_minutes || 0)) {
+      return (
+        <span className="text-[11px] font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg whitespace-nowrap">
+          Toleransi ({penaltySetting.grace_period_minutes}m)
+        </span>
+      )
+    }
+
+    if (penaltySetting.late_penalty_type === 'hourly_rate') {
+      const est = Math.round((lateMinutes / 60) * penaltySetting.hourly_rate)
+      return (
+        <span className="text-[11px] font-normal text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg whitespace-nowrap">
+          Dipotong {formatRupiah(penaltySetting.hourly_rate)}/jam (Est. -{formatRupiah(est)})
+        </span>
+      )
+    }
+
+    if (penaltySetting.late_penalty_type === 'fixed_per_incident') {
+      return (
+        <span className="text-[11px] font-normal text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg whitespace-nowrap">
+          Denda Tetap -{formatRupiah(penaltySetting.incident_rate)}/kejadian
+        </span>
+      )
+    }
+
+    return (
+      <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg whitespace-nowrap">
+        Proporsional Gaji (Formula Depnaker)
+      </span>
+    )
+  }
+
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-card p-5 rounded-2xl border border-border shadow-xs">
+    <div className="space-y-4 sm:space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card p-4 sm:p-5 rounded-2xl border border-border shadow-xs">
         <div>
           <div className="flex items-center space-x-1.5 text-primary font-normal text-xs uppercase tracking-wider mb-1">
             <Icon icon={AlertCircleIcon} size={15} />
             <span>Audit & Compliance HR</span>
           </div>
-          <h2 className="text-lg font-semibold text-foreground tracking-tight">
+          <h2 className="text-base sm:text-lg font-semibold text-foreground tracking-tight">
             Audit Anomali Presensi Harian
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5 font-normal">
@@ -85,20 +152,20 @@ export const AttendanceAudit: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center bg-muted border border-border rounded-lg px-2.5 py-1.5 space-x-2 text-xs text-foreground">
-            <Icon icon={Calendar03Icon} size={15} className="text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center bg-muted border border-border rounded-lg px-2.5 py-1.5 space-x-2 text-xs text-foreground w-full sm:w-auto">
+            <Icon icon={Calendar03Icon} size={15} className="text-muted-foreground shrink-0" />
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-transparent focus:outline-none font-normal text-foreground text-xs"
+              className="bg-transparent focus:outline-none font-normal text-foreground text-xs w-full"
             />
           </div>
           <button
             type="button"
             onClick={() => fetchAnomalies(selectedDate)}
-            className="px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 font-medium rounded-lg text-xs transition-colors shadow-xs"
+            className="px-3.5 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 font-medium rounded-lg text-xs transition-colors shadow-xs shrink-0 text-center"
           >
             Segarkan
           </button>
@@ -150,13 +217,17 @@ export const AttendanceAudit: React.FC = () => {
           <div className="text-xl font-semibold text-foreground mt-1">
             {summary.totalLateMinutes} <span className="text-xs font-normal text-muted-foreground">menit</span>
           </div>
-          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Terpotong di payroll</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">
+            {penaltySetting?.late_penalty_type === 'hourly_rate' && penaltySetting.is_active
+              ? `Est. Denda: -${formatRupiah(Math.round((summary.totalLateMinutes / 60) * penaltySetting.hourly_rate))}`
+              : 'Terpotong di payroll'}
+          </div>
         </div>
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-border flex items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-md">
+        <div className="p-3.5 sm:p-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
               <Icon icon={Search01Icon} size={15} />
             </div>
@@ -190,7 +261,7 @@ export const AttendanceAudit: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-foreground">
+            <table className="w-full text-left text-sm text-foreground min-w-[760px]">
               <thead className="bg-muted/40 text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider border-b border-border">
                 <tr>
                   <th className="py-2.5 px-4">Karyawan</th>
@@ -202,7 +273,7 @@ export const AttendanceAudit: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filtered.map((item) => {
+                {paginatedList.map((item) => {
                   const clockInStr = getClockTimeString(item.clock_in)
                   const distance = getDistanceMeters(item.clock_in)
                   const lateMinutes = item.late_minutes || 0
@@ -254,9 +325,7 @@ export const AttendanceAudit: React.FC = () => {
                         )}
                       </td>
                       <td className="py-2.5 px-4">
-                        <span className="text-[11px] font-normal text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg">
-                          Dipotong Rp 25.000/jam
-                        </span>
+                        {renderPayrollConsequence(lateMinutes)}
                       </td>
                     </tr>
                   )
@@ -264,6 +333,19 @@ export const AttendanceAudit: React.FC = () => {
               </tbody>
             </table>
           </div>
+        )}
+
+        {filtered.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filtered.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize)
+              setCurrentPage(1)
+            }}
+          />
         )}
       </div>
     </div>

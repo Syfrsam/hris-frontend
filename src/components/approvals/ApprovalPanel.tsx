@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import {
   Cancel01Icon,
   CheckmarkCircle01Icon,
+  File01Icon,
   Tick01Icon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
+import { Pagination } from '../common/Pagination'
 import { useAuth } from '../../context/AuthContext'
 import { approvalService } from '../../services/api'
 import type { LeaveRequest, OvertimeRequest } from '../../types'
@@ -17,7 +19,22 @@ export const ApprovalPanel: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
 
+  const [leavesCurrentPage, setLeavesCurrentPage] = useState<number>(1)
+  const [leavesPageSize, setLeavesPageSize] = useState<number>(10)
+  const [overtimesCurrentPage, setOvertimesCurrentPage] = useState<number>(1)
+  const [overtimesPageSize, setOvertimesPageSize] = useState<number>(10)
+
   const isHr = user?.roles?.some((r) => ['HR Manager', 'Superadmin'].includes(r))
+
+  const paginatedLeaves = useMemo(() => {
+    const start = (leavesCurrentPage - 1) * leavesPageSize
+    return pendingLeaves.slice(start, start + leavesPageSize)
+  }, [pendingLeaves, leavesCurrentPage, leavesPageSize])
+
+  const paginatedOvertimes = useMemo(() => {
+    const start = (overtimesCurrentPage - 1) * overtimesPageSize
+    return pendingOvertimes.slice(start, start + overtimesPageSize)
+  }, [pendingOvertimes, overtimesCurrentPage, overtimesPageSize])
 
   const fetchData = async () => {
     setIsLoading(true)
@@ -157,6 +174,7 @@ export const ApprovalPanel: React.FC = () => {
                 <th className="pb-2.5 px-3">Jenis Cuti</th>
                 <th className="pb-2.5 px-3">Rentang Tanggal</th>
                 <th className="pb-2.5 px-3">Hari</th>
+                <th className="pb-2.5 px-3">Bukti / Lampiran</th>
                 <th className="pb-2.5 px-3">Alasan</th>
                 <th className="pb-2.5 px-3 text-right">Keputusan</th>
               </tr>
@@ -164,18 +182,18 @@ export const ApprovalPanel: React.FC = () => {
             <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground font-normal">
+                  <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
                     Memuat permohonan cuti...
                   </td>
                 </tr>
               ) : pendingLeaves.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground font-normal">
+                  <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
                     Tidak ada permohonan cuti yang menunggu persetujuan saat ini.
                   </td>
                 </tr>
               ) : (
-                pendingLeaves.map((l) => (
+                paginatedLeaves.map((l) => (
                   <tr key={l.id} className="hover:bg-muted/40 transition-colors">
                     <td className="py-2.5 px-3 text-xs font-normal text-primary">
                       {l.request_number}
@@ -185,6 +203,22 @@ export const ApprovalPanel: React.FC = () => {
                       {l.start_date} s/d {l.end_date}
                     </td>
                     <td className="py-2.5 px-3 text-xs font-normal text-foreground">{l.total_days} hari</td>
+                    <td className="py-2.5 px-3">
+                      {l.attachment_url ? (
+                        <a
+                          href={l.attachment_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-medium transition-colors"
+                          title="Buka lampiran surat dokter / berkas cuti"
+                        >
+                          <Icon icon={File01Icon} size={12} />
+                          <span>Lihat Bukti</span>
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground text-xs font-normal">-</span>
+                      )}
+                    </td>
                     <td className="py-2.5 px-3 text-xs text-muted-foreground max-w-xs truncate font-normal">{l.reason}</td>
                     <td className="py-2.5 px-3 text-right space-x-1.5">
                       <button
@@ -209,6 +243,16 @@ export const ApprovalPanel: React.FC = () => {
               )}
             </tbody>
           </table>
+          <Pagination
+            currentPage={leavesCurrentPage}
+            totalItems={pendingLeaves.length}
+            pageSize={leavesPageSize}
+            onPageChange={setLeavesCurrentPage}
+            onPageSizeChange={(newSize) => {
+              setLeavesPageSize(newSize)
+              setLeavesCurrentPage(1)
+            }}
+          />
         </div>
       )}
 
@@ -240,7 +284,7 @@ export const ApprovalPanel: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                pendingOvertimes.map((o) => (
+                paginatedOvertimes.map((o) => (
                   <tr key={o.id} className="hover:bg-muted/40 transition-colors">
                     <td className="py-2.5 px-3 text-xs font-normal text-primary">
                       {o.request_number}
@@ -274,6 +318,16 @@ export const ApprovalPanel: React.FC = () => {
               )}
             </tbody>
           </table>
+          <Pagination
+            currentPage={overtimesCurrentPage}
+            totalItems={pendingOvertimes.length}
+            pageSize={overtimesPageSize}
+            onPageChange={setOvertimesCurrentPage}
+            onPageSizeChange={(newSize) => {
+              setOvertimesPageSize(newSize)
+              setOvertimesCurrentPage(1)
+            }}
+          />
         </div>
       )}
     </div>

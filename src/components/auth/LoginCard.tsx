@@ -2,22 +2,55 @@ import React, { useState } from 'react'
 import { Building01Icon, AlertCircleIcon } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import heroLoginImg from '../../assets/hero-login.webp'
 
 export const LoginCard: React.FC = () => {
-  const { login, isLoading } = useAuth()
+  const { login } = useAuth()
+  const { toast } = useToast()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setIsSubmitting(true)
     try {
-      await login(email, password)
+      const loggedUser = await login(email, password)
+      toast.success(
+        'Login Berhasil',
+        `Selamat datang kembali, ${loggedUser?.name || 'Pengguna'}!`
+      )
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login gagal. Periksa email dan password Anda.')
+      const status = err.response?.status
+      const msg = err.response?.data?.message
+
+      let userMsg = 'Login gagal. Periksa kembali email dan kata sandi Anda.'
+      let title = 'Gagal Masuk'
+
+      if (
+        status === 401 ||
+        status === 422 ||
+        msg?.toLowerCase().includes('sandi') ||
+        msg?.toLowerCase().includes('password') ||
+        msg?.toLowerCase().includes('email')
+      ) {
+        title = 'Autentikasi Gagal'
+        userMsg = msg || 'Email atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.'
+      } else if (!err.response) {
+        title = 'Koneksi Bermasalah'
+        userMsg = 'Gagal terhubung ke server backend HRIS. Pastikan server lokal sedang berjalan.'
+      } else if (msg) {
+        userMsg = msg
+      }
+
+      setError(userMsg)
+      toast.error(title, userMsg)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -149,10 +182,13 @@ export const LoginCard: React.FC = () => {
 
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full h-10 bg-primary hover:bg-primary/95 text-white font-medium rounded-lg text-xs transition-all shadow-xs disabled:opacity-50 flex items-center justify-center mt-1 cursor-pointer"
+              disabled={isSubmitting}
+              className="w-full h-10 bg-primary hover:bg-primary/95 text-white font-medium rounded-lg text-xs transition-all shadow-xs disabled:opacity-50 flex items-center justify-center space-x-2 mt-1 cursor-pointer"
             >
-              {isLoading ? 'Memverifikasi...' : 'Masuk ke Portal'}
+              {isSubmitting && (
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              )}
+              <span>{isSubmitting ? 'Memverifikasi Kredensial...' : 'Masuk ke Portal'}</span>
             </button>
 
             <div className="text-center text-[10px] sm:text-[11px] text-muted-foreground font-normal pt-2">

@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import {
   Calendar03Icon,
+  Camera01Icon,
+  Cancel01Icon,
   CheckmarkCircle01Icon,
   Clock01Icon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
+import { Pagination } from '../common/Pagination'
 import { attendanceService } from '../../services/api'
 import type { Attendance } from '../../types'
 import { Badge } from '../ui/badge'
@@ -30,6 +33,9 @@ export const AttendanceHistory: React.FC = () => {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [pageSize, setPageSize] = useState<number>(10)
 
   const fetchHistory = async () => {
     setIsLoading(true)
@@ -55,9 +61,15 @@ export const AttendanceHistory: React.FC = () => {
 
   useEffect(() => {
     fetchHistory()
+    setCurrentPage(1)
   }, [selectedMonth])
 
   const safeList = Array.isArray(attendances) ? attendances : []
+  const paginatedList = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return safeList.slice(start, start + pageSize)
+  }, [safeList, currentPage, pageSize])
+
   const totalPresent = summary?.total_present ?? safeList.filter((a) => Boolean(formatClockTime(a.clock_in) !== '-')).length
   const totalLate = summary?.total_late ?? safeList.filter((a) => a.status === 'late').length
   const totalMinutes = safeList.reduce((acc, a) => acc + (a.work_duration_minutes || 0), 0)
@@ -119,66 +131,133 @@ export const AttendanceHistory: React.FC = () => {
               <th className="pb-2.5 px-3">Tanggal</th>
               <th className="pb-2.5 px-3">Clock-In</th>
               <th className="pb-2.5 px-3">Clock-Out</th>
+              <th className="pb-2.5 px-3">Bukti Foto</th>
               <th className="pb-2.5 px-3">Status</th>
               <th className="pb-2.5 px-3">Keterlambatan</th>
               <th className="pb-2.5 px-3 text-right">Durasi Kerja</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y border-border">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground font-normal">
+                <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
                   Memuat data...
                 </td>
               </tr>
             ) : safeList.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground font-normal">
+                <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
                   Tidak ada catatan presensi pada periode ini.
                 </td>
               </tr>
             ) : (
-              safeList.map((item) => (
-                <tr key={item.id} className="hover:bg-muted/40 transition-colors">
-                  <td className="py-2.5 px-3 font-normal text-xs text-foreground">{item.date}</td>
-                  <td className="py-2.5 px-3 text-xs font-normal text-foreground">{formatClockTime(item.clock_in)}</td>
-                  <td className="py-2.5 px-3 text-xs font-normal text-foreground">{formatClockTime(item.clock_out)}</td>
-                  <td className="py-2.5 px-3">
-                    <Badge
-                      variant={
-                        item.status === 'present'
-                          ? 'success'
+              paginatedList.map((item) => {
+                const photoUrl = typeof item.clock_in === 'object' ? item.clock_in?.photo_url : null
+                return (
+                  <tr key={item.id} className="hover:bg-muted/40 transition-colors">
+                    <td className="py-2.5 px-3 font-normal text-xs text-foreground">{item.date}</td>
+                    <td className="py-2.5 px-3 text-xs font-normal text-foreground">{formatClockTime(item.clock_in)}</td>
+                    <td className="py-2.5 px-3 text-xs font-normal text-foreground">{formatClockTime(item.clock_out)}</td>
+                    <td className="py-2.5 px-3">
+                      {photoUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewPhotoUrl(photoUrl)}
+                          className="inline-flex items-center space-x-1.5 p-0.5 rounded-lg hover:bg-muted text-primary cursor-pointer transition-colors"
+                          title="Lihat foto selfie presensi"
+                        >
+                          <img
+                            src={photoUrl}
+                            alt="Selfie"
+                            className="w-7 h-7 rounded-md object-cover border border-primary/20"
+                          />
+                          <span className="text-[11px] font-medium underline">Selfie</span>
+                        </button>
+                      ) : (
+                        <span className="text-muted-foreground text-xs font-normal">-</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <Badge
+                        variant={
+                          item.status === 'present'
+                            ? 'success'
+                            : item.status === 'late'
+                            ? 'warning'
+                            : 'destructive'
+                        }
+                        className="text-[10px] px-2 py-0.5 font-medium"
+                      >
+                        {item.status === 'present'
+                          ? 'Tepat Waktu'
                           : item.status === 'late'
-                          ? 'warning'
-                          : 'destructive'
-                      }
-                      className="text-[10px] px-2 py-0.5 font-medium"
-                    >
-                      {item.status === 'present'
-                        ? 'Tepat Waktu'
-                        : item.status === 'late'
-                        ? 'Terlambat'
-                        : 'Alpa'}
-                    </Badge>
-                  </td>
-                  <td className="py-2.5 px-3 text-xs">
-                    {item.late_minutes > 0 ? (
-                      <span className="text-rose-600 dark:text-rose-400 font-medium">{item.late_minutes}m</span>
-                    ) : (
-                      <span className="text-muted-foreground font-normal">-</span>
-                    )}
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-xs font-normal text-foreground">
-                    {item.work_duration_minutes > 0
-                      ? `${(item.work_duration_minutes / 60).toFixed(1)} jam`
-                      : '-'}
-                  </td>
-                </tr>
-              ))
+                          ? 'Terlambat'
+                          : 'Alpa'}
+                      </Badge>
+                    </td>
+                    <td className="py-2.5 px-3 text-xs">
+                      {item.late_minutes > 0 ? (
+                        <span className="text-rose-600 dark:text-rose-400 font-medium">{item.late_minutes}m</span>
+                      ) : (
+                        <span className="text-muted-foreground font-normal">-</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-xs font-normal text-foreground">
+                      {item.work_duration_minutes > 0
+                        ? `${(item.work_duration_minutes / 60).toFixed(1)} jam`
+                        : '-'}
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalItems={safeList.length}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+        pageSizeOptions={[10, 20, 31]}
+      />
+
+      {/* Selfie Photo Preview Modal */}
+      {previewPhotoUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-card rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-border space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center space-x-2">
+                <Icon icon={Camera01Icon} size={16} className="text-primary" />
+                <h4 className="text-sm font-semibold text-foreground">Verifikasi Foto Selfie</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewPhotoUrl(null)}
+                className="text-muted-foreground hover:text-foreground p-1"
+              >
+                <Icon icon={Cancel01Icon} size={16} />
+              </button>
+            </div>
+
+            <div className="rounded-xl overflow-hidden border border-border bg-black aspect-square flex items-center justify-center">
+              <img src={previewPhotoUrl} alt="Selfie Presensi" className="w-full h-full object-contain" />
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewPhotoUrl(null)}
+                className="px-4 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium shadow-xs"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

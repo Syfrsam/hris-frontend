@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null
   token: string | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<User | null>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -63,22 +63,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener('auth:unauthorized', handleUnauthorized)
   }, [token])
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true)
-    try {
-      clearApiCache()
-      const res = await authService.login({ email, password })
-      if (res.data?.success) {
-        const { token: newToken, user: userData } = res.data.data
-        skipNextRefresh.current = true
-        localStorage.setItem('hris_token', newToken)
-        localStorage.setItem('hris_user', JSON.stringify(userData))
-        setUser(userData)
-        setToken(newToken)
-      }
-    } finally {
-      setIsLoading(false)
+  const login = async (email: string, password: string): Promise<User | null> => {
+    clearApiCache()
+    const res = await authService.login({ email, password })
+    if (res.data?.success) {
+      const { token: newToken, user: userData } = res.data.data
+      skipNextRefresh.current = true
+      localStorage.setItem('hris_token', newToken)
+      localStorage.setItem('hris_user', JSON.stringify(userData))
+      setUser(userData)
+      setToken(newToken)
+      return userData
     }
+    return null
   }
 
   const logout = async () => {
