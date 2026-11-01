@@ -17,7 +17,7 @@ import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Card, CardTitle, CardDescription } from '../ui/card'
 import { Input } from '../ui/input'
-import { Skeleton } from '../ui/skeleton'
+import { SkeletonBox } from '../ui/skeleton'
 import { leaveService } from '../../services/api'
 import type { LeaveType } from '../../types'
 
@@ -368,12 +368,22 @@ export const LeaveTypeSettings: React.FC = () => {
                     {card.desc}
                   </p>
                 </div>
-                <span className="text-xl font-medium text-foreground tabular-nums tracking-tight">
-                  {isLoading ? '-' : card.count}
-                </span>
+                <div className="h-7 flex items-center">
+                  {isLoading ? (
+                    <SkeletonBox height={22} width={38} radius={6} />
+                  ) : (
+                    <span className="text-xl font-medium text-foreground tabular-nums tracking-tight">
+                      {card.count}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground font-normal">
-                <span>{isLoading ? '...' : card.subtitle}</span>
+                {isLoading ? (
+                  <SkeletonBox height={11} width={80} radius={4} />
+                ) : (
+                  <span>{card.subtitle}</span>
+                )}
                 <span className={isSelected ? 'text-primary font-medium' : 'text-muted-foreground/80'}>
                   {isSelected ? 'Aktif Terfilter' : 'Klik Filter'}
                 </span>
@@ -482,25 +492,104 @@ export const LeaveTypeSettings: React.FC = () => {
           </div>
         </div>
 
-        {/* Loading State */}
+        {/* Loading State - 1:1 Matching Skullet Table & Mobile Skeleton */}
         {isLoading ? (
-          <div className="p-4 sm:p-6 space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex items-center justify-between py-2.5 border-b border-border/40">
-                <div className="flex items-center space-x-3">
-                  <Skeleton className="w-14 h-6 rounded-md" />
-                  <div className="space-y-1">
-                    <Skeleton className="w-36 h-3.5" />
-                    <Skeleton className="w-20 h-2.5" />
+          <>
+            {/* Desktop Table Skeleton (>= 640px) */}
+            <div className="hidden sm:block overflow-x-auto rounded-xl border border-border/80">
+              <table className="w-full text-left border-collapse table-fixed">
+                <colgroup>
+                  <col className="w-[26%]" />
+                  <col className="w-[22%]" />
+                  <col className="w-[22%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[20%]" />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-border/80 text-[11px] font-medium text-muted-foreground uppercase tracking-wider bg-muted/30">
+                    <th className="py-2.5 px-3 text-left">Kode & Jenis Cuti</th>
+                    <th className="py-2.5 px-3 text-left">Skema Kuota Tahunan</th>
+                    <th className="py-2.5 px-3 text-left">Ketentuan Pengajuan</th>
+                    <th className="py-2.5 px-2 text-left whitespace-nowrap">Status</th>
+                    <th className="py-2.5 px-3 text-right whitespace-nowrap">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 bg-card text-xs">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i} className="hover:bg-muted/20 transition-colors">
+                      {/* Kode & Nama */}
+                      <td className="py-2.5 px-3 align-middle overflow-hidden">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <SkeletonBox height={20} width={38} radius={4} className="shrink-0" />
+                          <SkeletonBox height={14} width="65%" radius={4} />
+                        </div>
+                      </td>
+
+                      {/* Skema Kuota */}
+                      <td className="py-2.5 px-3 align-middle overflow-hidden">
+                        <div className="space-y-1">
+                          <SkeletonBox height={14} width="70%" radius={4} />
+                          <SkeletonBox height={11} width="50%" radius={4} />
+                        </div>
+                      </td>
+
+                      {/* Ketentuan Pengajuan */}
+                      <td className="py-2.5 px-3 align-middle overflow-hidden">
+                        <div className="space-y-1">
+                          <SkeletonBox height={14} width="60%" radius={4} />
+                          <SkeletonBox height={16} width={90} radius={4} />
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-2.5 px-2 align-middle whitespace-nowrap">
+                        <SkeletonBox height={18} width={52} radius={999} />
+                      </td>
+
+                      {/* Aksi */}
+                      <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <SkeletonBox height={28} width={52} radius={8} />
+                          <SkeletonBox height={28} width={68} radius={8} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List Skeleton (< 640px) */}
+            <div className="sm:hidden divide-y divide-border rounded-xl border border-border/80 overflow-hidden bg-card">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <SkeletonBox height={20} width={38} radius={4} className="shrink-0" />
+                      <SkeletonBox height={14} width="55%" radius={4} />
+                    </div>
+                    <SkeletonBox height={18} width={50} radius={999} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl border border-border/60 bg-muted/20">
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width={60} radius={3} />
+                      <SkeletonBox height={13} width={80} radius={3} />
+                    </div>
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width={60} radius={3} />
+                      <SkeletonBox height={13} width={70} radius={3} />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-border/60 flex items-center justify-end gap-1.5">
+                    <SkeletonBox height={26} width={50} radius={8} />
+                    <SkeletonBox height={26} width={65} radius={8} />
                   </div>
                 </div>
-                <Skeleton className="w-24 h-4 hidden sm:block" />
-                <Skeleton className="w-20 h-5 rounded-md" />
-                <Skeleton className="w-20 h-4 hidden md:block" />
-                <Skeleton className="w-16 h-7 rounded-lg" />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         ) : filteredTypes.length === 0 ? (
           /* Empty State */
           <div className="p-10 text-center space-y-2.5">

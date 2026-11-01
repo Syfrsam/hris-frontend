@@ -12,7 +12,7 @@ import { Card, CardTitle, CardDescription } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { Skeleton } from '../ui/skeleton'
+import { SkeletonBox } from '../ui/skeleton'
 import { penaltyService } from '../../services/api'
 import type { PenaltySetting } from '../../types'
 
@@ -122,95 +122,36 @@ export const PenaltySettings: React.FC = () => {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="space-y-5 sm:space-y-6">
-        {/* Header Banner Skeleton */}
-        <div className="bg-card border border-border p-5 sm:p-6 rounded-2xl shadow-xs space-y-3">
-          <Skeleton className="h-5 w-36 rounded-md" />
-          <Skeleton className="h-7 w-72 rounded-lg" />
-          <Skeleton className="h-4 w-full max-w-xl rounded-md" />
-        </div>
-
-        {/* Form Grid Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
-          <div className="lg:col-span-8 space-y-4 sm:space-y-5">
-            {/* Master Toggle Skeleton */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card space-y-2">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-5 w-48" />
-                <Skeleton className="h-6 w-11 rounded-full" />
-              </div>
-              <Skeleton className="h-3 w-80" />
-            </div>
-
-            {/* Scheme Cards Skeleton */}
-            <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
-              <div className="space-y-1.5">
-                <Skeleton className="h-5 w-60" />
-                <Skeleton className="h-3 w-96" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-4 rounded-full" />
-                    </div>
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-3/4" />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Toleransi & Alpa Skeleton */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div className="p-5 rounded-2xl border border-border bg-card space-y-3">
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-9 w-full rounded-lg" />
-              </div>
-              <div className="p-5 rounded-2xl border border-border bg-card space-y-3">
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-9 w-full rounded-lg" />
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column Skeleton */}
-          <div className="lg:col-span-4 space-y-5">
-            <div className="p-5 rounded-2xl border border-border bg-card space-y-3">
-              <Skeleton className="h-4 w-32" />
-              <div className="space-y-2.5">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="p-3 rounded-xl border border-border bg-muted/20 space-y-2">
-                    <Skeleton className="h-3 w-36" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="p-5 rounded-2xl border border-border bg-card space-y-3">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-10 w-full rounded-xl" />
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-5 sm:space-y-6">
       {/* Header Banner */}
       <div className="bg-primary text-primary-foreground p-5 sm:p-6 rounded-2xl shadow-xs relative overflow-hidden">
-        <div className="relative z-10 max-w-3xl">
-          <h2 className="text-base sm:text-xl font-semibold tracking-tight text-white">
-            Peraturan Denda & Pemotongan
-          </h2>
-          <p className="text-primary-foreground/85 text-xs mt-1 font-normal leading-relaxed">
-            Atur skema denda keterlambatan, batas toleransi shift, dan potongan ketidakhadiran kerja.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
+          <div>
+            <h2 className="text-base sm:text-xl font-semibold tracking-tight text-white">
+              Peraturan Denda & Pemotongan
+            </h2>
+            <p className="text-primary-foreground/85 text-xs mt-1 font-normal leading-relaxed">
+              Atur skema denda keterlambatan, batas toleransi shift, dan potongan ketidakhadiran kerja.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => loadSettings()}
+              disabled={isLoading}
+              className="h-8.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Segarkan data peraturan denda"
+            >
+              <Icon
+                icon={RefreshIcon}
+                size={14}
+                className={isLoading ? 'animate-spin' : ''}
+              />
+              <span>Segarkan</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -231,7 +172,128 @@ export const PenaltySettings: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleSave} className="space-y-5 sm:space-y-6">
+      {isLoading ? (
+        /* 1:1 Matching Skullet Skeleton of Form & Live Simulation */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+          {/* Main Form Skeleton */}
+          <div className="lg:col-span-8 space-y-4 sm:space-y-5">
+            {/* Master Toggle Status Skeleton */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1.5 max-w-xl flex-1">
+                  <div className="flex items-center gap-2">
+                    <SkeletonBox height={16} width={180} radius={4} />
+                    <SkeletonBox height={20} width={48} radius={999} />
+                  </div>
+                  <SkeletonBox height={12} width={340} radius={4} />
+                </div>
+                <SkeletonBox height={24} width={44} radius={999} className="shrink-0" />
+              </div>
+            </div>
+
+            {/* Scheme Cards Skeleton */}
+            <div className="p-5 sm:p-6 rounded-2xl border border-border/80 bg-card shadow-xs space-y-4">
+              <div className="space-y-1.5">
+                <SkeletonBox height={16} width={220} radius={4} />
+                <SkeletonBox height={12} width={380} radius={4} />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="p-3.5 rounded-xl border border-border/80 bg-card space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <SkeletonBox height={14} width="65%" radius={4} />
+                      <SkeletonBox height={16} width={16} radius="50%" />
+                    </div>
+                    <div className="space-y-1">
+                      <SkeletonBox height={11} width="92%" radius={3} />
+                      <SkeletonBox height={11} width="75%" radius={3} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Toleransi & Nominal Grid Skeleton */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+              <div className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-xs space-y-3">
+                <div className="space-y-1">
+                  <SkeletonBox height={14} width={140} radius={4} />
+                  <SkeletonBox height={11} width={220} radius={3} />
+                </div>
+                <SkeletonBox height={38} width="100%" radius={8} />
+                <SkeletonBox height={10} width={160} radius={3} />
+              </div>
+
+              <div className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-xs space-y-3">
+                <div className="space-y-1">
+                  <SkeletonBox height={14} width={160} radius={4} />
+                  <SkeletonBox height={11} width={240} radius={3} />
+                </div>
+                <SkeletonBox height={38} width="100%" radius={8} />
+                <SkeletonBox height={10} width={180} radius={3} />
+              </div>
+            </div>
+
+            {/* Absent Penalty Policy Skeleton */}
+            <div className="p-5 sm:p-6 rounded-2xl border border-border/80 bg-card shadow-xs space-y-4">
+              <div className="space-y-1.5">
+                <SkeletonBox height={16} width={230} radius={4} />
+                <SkeletonBox height={12} width={360} radius={4} />
+              </div>
+
+              <div className="space-y-2.5 pt-1">
+                <div className="p-3.5 rounded-xl border border-border/80 bg-card flex items-center justify-between">
+                  <div className="space-y-1 flex-1">
+                    <SkeletonBox height={13} width={180} radius={4} />
+                    <SkeletonBox height={11} width={260} radius={3} />
+                  </div>
+                  <SkeletonBox height={16} width={16} radius="50%" />
+                </div>
+                <div className="p-3.5 rounded-xl border border-border/80 bg-card flex items-center justify-between">
+                  <div className="space-y-1 flex-1">
+                    <SkeletonBox height={13} width={200} radius={4} />
+                    <SkeletonBox height={11} width={280} radius={3} />
+                  </div>
+                  <SkeletonBox height={16} width={16} radius="50%" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column Skeleton */}
+          <div className="lg:col-span-4 space-y-4 sm:space-y-5">
+            {/* Live Simulation Card Skeleton */}
+            <div className="p-5 rounded-2xl border border-border/80 bg-card shadow-xs space-y-3.5">
+              <div className="space-y-1">
+                <SkeletonBox height={15} width={170} radius={4} />
+                <SkeletonBox height={11} width={210} radius={3} />
+              </div>
+
+              <div className="space-y-2 pt-1">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="p-3 rounded-xl border border-border/70 bg-muted/20 flex items-center justify-between">
+                    <SkeletonBox height={12} width={100} radius={3} />
+                    <SkeletonBox height={18} width={75} radius={999} />
+                  </div>
+                ))}
+              </div>
+
+              <SkeletonBox height={11} width={230} radius={3} />
+            </div>
+
+            {/* Recalculate & Save Card Skeleton */}
+            <div className="p-5 rounded-2xl border border-border/80 bg-card shadow-xs space-y-4">
+              <SkeletonBox height={14} width="85%" radius={4} />
+              <SkeletonBox height={42} width="100%" radius={12} />
+              <div className="flex justify-center pt-1">
+                <SkeletonBox height={11} width={180} radius={3} />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={handleSave} className="space-y-5 sm:space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
           {/* Main Form Settings */}
           <div className="lg:col-span-8 space-y-4 sm:space-y-5">
@@ -604,7 +666,7 @@ export const PenaltySettings: React.FC = () => {
               <Button
                 type="submit"
                 disabled={isSaving}
-                className="w-full h-11 sm:h-10 rounded-xl font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs gap-2 text-xs"
+                className="w-full h-11 sm:h-10 rounded-xl font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-xs gap-2 text-xs cursor-pointer active:scale-[0.98]"
               >
                 <Icon icon={isSaving ? RefreshIcon : FloppyDiskIcon} size={16} className={isSaving ? 'animate-spin' : ''} />
                 <span>{isSaving ? 'Menyimpan...' : 'Simpan Peraturan Denda'}</span>
@@ -619,6 +681,7 @@ export const PenaltySettings: React.FC = () => {
           </div>
         </div>
       </form>
+      )}
     </div>
   )
 }
