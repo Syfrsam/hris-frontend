@@ -186,20 +186,10 @@ export const LeaveManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Quota Balances Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
-        {isLoading ? (
-          [1, 2, 3].map((i) => (
-            <div key={i} className="p-4 rounded-xl bg-muted/40 border border-border space-y-2 animate-pulse">
-              <Skeleton className="h-4 w-32" />
-              <div className="mt-1 flex items-baseline justify-between">
-                <Skeleton className="h-8 w-16" />
-                <Skeleton className="h-4 w-20" />
-              </div>
-            </div>
-          ))
-        ) : (
-          balances.map((b) => (
+      {/* Quota Balances Cards - Only displayed when balances exist */}
+      {balances.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
+          {balances.map((b) => (
             <div
               key={b.id}
               className="p-4 rounded-xl bg-muted/40 border border-border"
@@ -218,9 +208,9 @@ export const LeaveManagement: React.FC = () => {
                 </div>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Requests Table */}
       <div className="overflow-x-auto">
@@ -240,7 +230,7 @@ export const LeaveManagement: React.FC = () => {
           <tbody className="divide-y divide-border">
             {isLoading ? (
               [1, 2, 3, 4, 5].map((i) => (
-                <tr key={i} className="animate-pulse">
+                <tr key={i}>
                   <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
                   <td className="py-3 px-3"><Skeleton className="h-4 w-28" /></td>
                   <td className="py-3 px-3"><Skeleton className="h-4 w-36" /></td>

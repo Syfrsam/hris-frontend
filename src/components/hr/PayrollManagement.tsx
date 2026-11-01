@@ -14,6 +14,7 @@ import api, { API_BASE_URL } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import type { PayrollPeriod, Payroll } from '../../types'
+import { Skeleton } from '../ui/skeleton'
 
 export const PayrollManagement: React.FC = () => {
   const { user } = useAuth()
@@ -361,9 +362,23 @@ export const PayrollManagement: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-2 font-normal">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs">Memuat data rekapitulasi gaji...</span>
+          <div className="p-4 space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center justify-between py-2.5 px-3 border-b border-border/40">
+                <div className="space-y-1.5 w-1/4">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-4 w-28 hidden sm:block" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-20 hidden md:block" />
+                <Skeleton className="h-4 w-24 font-semibold" />
+                <div className="flex items-center gap-1.5">
+                  <Skeleton className="h-7 w-14 rounded-lg" />
+                  <Skeleton className="h-7 w-14 rounded-lg" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : periods.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-1.5 font-normal">

@@ -17,6 +17,7 @@ import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Card, CardTitle, CardDescription } from '../ui/card'
 import { Input } from '../ui/input'
+import { Skeleton } from '../ui/skeleton'
 import { leaveService } from '../../services/api'
 import type { LeaveType } from '../../types'
 
@@ -485,18 +486,18 @@ export const LeaveTypeSettings: React.FC = () => {
         {isLoading ? (
           <div className="p-4 sm:p-6 space-y-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex items-center justify-between py-2.5 border-b border-border/40 animate-pulse">
+              <div key={i} className="flex items-center justify-between py-2.5 border-b border-border/40">
                 <div className="flex items-center space-x-3">
-                  <div className="w-14 h-6 rounded bg-muted" />
+                  <Skeleton className="w-14 h-6 rounded-md" />
                   <div className="space-y-1">
-                    <div className="w-36 h-3.5 rounded bg-muted" />
-                    <div className="w-20 h-2.5 rounded bg-muted/60" />
+                    <Skeleton className="w-36 h-3.5" />
+                    <Skeleton className="w-20 h-2.5" />
                   </div>
                 </div>
-                <div className="w-24 h-4 rounded bg-muted hidden sm:block" />
-                <div className="w-20 h-5 rounded-md bg-muted" />
-                <div className="w-20 h-4 rounded bg-muted hidden md:block" />
-                <div className="w-16 h-7 rounded-lg bg-muted" />
+                <Skeleton className="w-24 h-4 hidden sm:block" />
+                <Skeleton className="w-20 h-5 rounded-md" />
+                <Skeleton className="w-20 h-4 hidden md:block" />
+                <Skeleton className="w-16 h-7 rounded-lg" />
               </div>
             ))}
           </div>

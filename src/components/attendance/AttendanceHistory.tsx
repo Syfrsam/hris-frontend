@@ -11,6 +11,7 @@ import { Pagination } from '../common/Pagination'
 import { attendanceService } from '../../services/api'
 import type { Attendance } from '../../types'
 import { Badge } from '../ui/badge'
+import { Skeleton } from '../ui/skeleton'
 
 interface SummaryData {
   total_present?: number
@@ -139,11 +140,17 @@ export const AttendanceHistory: React.FC = () => {
           </thead>
           <tbody className="divide-y border-border">
             {isLoading ? (
-              <tr>
-                <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
-                  Memuat data...
-                </td>
-              </tr>
+              [1, 2, 3, 4, 5].map((i) => (
+                <tr key={i}>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-16" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-16" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-6 w-6 rounded-md" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-5 w-20 rounded-md" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-20" /></td>
+                  <td className="py-3 px-3 text-right"><Skeleton className="h-4 w-14 ml-auto" /></td>
+                </tr>
+              ))
             ) : safeList.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">

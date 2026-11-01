@@ -21,6 +21,7 @@ import { Pagination } from '../common/Pagination'
 import api, { employeeService } from '../../services/api'
 import { useToast } from '../../context/ToastContext'
 import type { Employee, Department, JobPosition } from '../../types'
+import { Skeleton } from '../ui/skeleton'
 
 export const EmployeeManagement: React.FC = () => {
   const { toast } = useToast()
@@ -338,21 +339,20 @@ export const EmployeeManagement: React.FC = () => {
 
       <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
         {loading ? (
-          <div className="p-4 space-y-3 animate-pulse">
-            <div className="h-8 bg-muted/60 rounded-lg w-full" />
+          <div className="p-4 space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center justify-between py-2.5 border-b border-border/40">
+              <div key={i} className="flex items-center justify-between py-2.5 px-3 border-b border-border/40">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-lg bg-muted" />
+                  <Skeleton className="w-8 h-8 rounded-lg" />
                   <div className="space-y-1.5">
-                    <div className="w-32 h-3.5 rounded bg-muted" />
-                    <div className="w-24 h-2.5 rounded bg-muted/60" />
+                    <Skeleton className="w-32 h-3.5" />
+                    <Skeleton className="w-24 h-2.5" />
                   </div>
                 </div>
-                <div className="w-32 h-3.5 rounded bg-muted hidden sm:block" />
-                <div className="w-20 h-5 rounded-md bg-muted" />
-                <div className="w-24 h-3.5 rounded bg-muted hidden md:block" />
-                <div className="w-16 h-7 rounded-lg bg-muted" />
+                <Skeleton className="w-32 h-3.5 hidden sm:block" />
+                <Skeleton className="w-20 h-5 rounded-md" />
+                <Skeleton className="w-24 h-3.5 hidden md:block" />
+                <Skeleton className="w-16 h-7 rounded-lg" />
               </div>
             ))}
           </div>

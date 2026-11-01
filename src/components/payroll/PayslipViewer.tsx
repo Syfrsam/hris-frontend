@@ -4,6 +4,7 @@ import { Icon } from '../common/Icon'
 import { Pagination } from '../common/Pagination'
 import { payrollService, API_BASE_URL } from '../../services/api'
 import type { Payroll } from '../../types'
+import { Skeleton } from '../ui/skeleton'
 
 export const PayslipViewer: React.FC = () => {
   const [payslips, setPayslips] = useState<Payroll[]>([])
@@ -105,11 +106,22 @@ export const PayslipViewer: React.FC = () => {
           </thead>
           <tbody className="divide-y divide-border">
             {isLoading ? (
-              <tr>
-                <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
-                  Memuat data slip gaji...
-                </td>
-              </tr>
+              [1, 2, 3, 4].map((i) => (
+                <tr key={i}>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-28" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-32" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-20" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-20" /></td>
+                  <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
+                  <td className="py-3 px-3 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Skeleton className="h-7 w-16 rounded-lg" />
+                      <Skeleton className="h-7 w-16 rounded-lg" />
+                    </div>
+                  </td>
+                </tr>
+              ))
             ) : payslips.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">

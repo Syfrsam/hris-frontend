@@ -15,7 +15,7 @@ import { Sidebar, type TabKey } from './components/layout/Sidebar'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
-import { SkulletProvider } from 'skullet/react'
+import { Skeleton } from './components/ui/skeleton'
 
 const UserRoleManagement = lazy(() =>
   import('./components/admin/UserRoleManagement').then((m) => ({ default: m.UserRoleManagement }))
@@ -171,8 +171,50 @@ const MainDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex flex-col font-sans">
+        {/* Top Navbar Skeleton */}
+        <header className="h-16 border-b border-border bg-card/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Skeleton className="w-8 h-8 rounded-lg" />
+            <Skeleton className="w-32 h-5 rounded-md hidden sm:block" />
+          </div>
+          <div className="flex items-center space-x-3">
+            <Skeleton className="w-24 h-4 rounded-md hidden sm:block" />
+            <Skeleton className="w-9 h-9 rounded-full" />
+          </div>
+        </header>
+
+        {/* Body Skeleton */}
+        <div className="flex-1 flex min-w-0">
+          {/* Sidebar Skeleton (desktop) */}
+          <aside className="w-64 border-r border-border bg-card/50 p-4 space-y-3 hidden md:block">
+            <Skeleton className="h-4 w-20 rounded" />
+            <div className="space-y-1.5 pt-1">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="h-9 w-full rounded-xl" />
+              ))}
+            </div>
+          </aside>
+
+          {/* Main Content Skeleton */}
+          <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-5">
+            <div className="p-6 rounded-2xl border border-border bg-card space-y-3">
+              <Skeleton className="h-6 w-56" />
+              <Skeleton className="h-4 w-80 max-w-full" />
+            </div>
+            <div className="p-6 rounded-2xl border border-border bg-card space-y-4">
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-8 w-24 rounded-lg" />
+              </div>
+              <div className="space-y-2.5 pt-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-11 w-full rounded-xl" />
+                ))}
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
     )
   }
@@ -219,8 +261,22 @@ const MainDashboard: React.FC = () => {
           <ErrorBoundary>
             <Suspense
               fallback={
-                <div className="p-8 flex items-center justify-center">
-                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <div className="space-y-5">
+                  <div className="p-6 rounded-2xl border border-border bg-card space-y-3">
+                    <Skeleton className="h-6 w-56" />
+                    <Skeleton className="h-4 w-80 max-w-full" />
+                  </div>
+                  <div className="p-6 rounded-2xl border border-border bg-card space-y-4">
+                    <div className="flex justify-between items-center">
+                      <Skeleton className="h-5 w-40" />
+                      <Skeleton className="h-8 w-28 rounded-lg" />
+                    </div>
+                    <div className="space-y-2.5 pt-2">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton key={i} className="h-11 w-full rounded-xl" />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               }
             >
@@ -364,9 +420,7 @@ export function App() {
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
-          <SkulletProvider reveal="smart" mode="system">
-            <MainDashboard />
-          </SkulletProvider>
+          <MainDashboard />
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

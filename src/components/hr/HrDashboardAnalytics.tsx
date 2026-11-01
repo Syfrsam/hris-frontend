@@ -13,6 +13,7 @@ import api from '../../services/api'
 import type { Employee, Department, Attendance, PayrollPeriod } from '../../types'
 import { Card, CardTitle, CardDescription } from '../ui/card'
 import { Badge } from '../ui/badge'
+import { Skeleton } from '../ui/skeleton'
 
 interface HrDashboardAnalyticsProps {
   onNavigateTab: (tab: string) => void
@@ -97,13 +98,13 @@ export const HrDashboardAnalytics: React.FC<HrDashboardAnalyticsProps> = ({
 
   if (loading) {
     return (
-      <div className="space-y-5 animate-pulse">
+      <div className="space-y-5">
         {/* Header Banner Skeleton */}
-        <div className="bg-muted/70 p-6 rounded-2xl border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-6 rounded-2xl border border-border bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2.5">
-            <div className="w-24 h-5 rounded-md bg-muted" />
-            <div className="w-64 sm:w-80 h-6 rounded-lg bg-muted" />
-            <div className="w-72 sm:w-96 h-4 rounded-md bg-muted/60" />
+            <Skeleton className="w-24 h-5 rounded-md" />
+            <Skeleton className="w-64 sm:w-80 h-6 rounded-lg" />
+            <Skeleton className="w-72 sm:w-96 h-4 rounded-md" />
           </div>
         </div>
 
@@ -112,11 +113,11 @@ export const HrDashboardAnalytics: React.FC<HrDashboardAnalyticsProps> = ({
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="p-4 rounded-xl space-y-2.5">
               <div className="flex items-center space-x-1.5">
-                <div className="w-4 h-4 rounded bg-muted" />
-                <div className="w-20 h-3 rounded bg-muted" />
+                <Skeleton className="w-4 h-4 rounded" />
+                <Skeleton className="w-20 h-3 rounded" />
               </div>
-              <div className="w-24 h-6 rounded-md bg-muted mt-1" />
-              <div className="w-16 h-3 rounded bg-muted/60" />
+              <Skeleton className="w-24 h-6 rounded-md mt-1" />
+              <Skeleton className="w-16 h-3 rounded" />
             </Card>
           ))}
         </div>
@@ -127,20 +128,20 @@ export const HrDashboardAnalytics: React.FC<HrDashboardAnalyticsProps> = ({
           <Card className="p-5 rounded-xl space-y-3">
             <div className="flex items-center justify-between">
               <div className="space-y-1.5">
-                <div className="w-36 h-4 rounded bg-muted" />
-                <div className="w-28 h-3 rounded bg-muted/60" />
+                <Skeleton className="w-36 h-4 rounded" />
+                <Skeleton className="w-28 h-3 rounded" />
               </div>
-              <div className="w-7 h-7 rounded-lg bg-muted" />
+              <Skeleton className="w-7 h-7 rounded-lg" />
             </div>
 
             <div className="space-y-3 pt-2">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="space-y-1.5">
                   <div className="flex justify-between">
-                    <div className="w-32 h-3.5 rounded bg-muted" />
-                    <div className="w-14 h-3.5 rounded bg-muted" />
+                    <Skeleton className="w-32 h-3.5 rounded" />
+                    <Skeleton className="w-14 h-3.5 rounded" />
                   </div>
-                  <div className="w-full h-2 rounded bg-muted" />
+                  <Skeleton className="w-full h-2 rounded" />
                 </div>
               ))}
             </div>
@@ -151,26 +152,26 @@ export const HrDashboardAnalytics: React.FC<HrDashboardAnalyticsProps> = ({
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="space-y-1.5">
-                  <div className="w-36 h-4 rounded bg-muted" />
-                  <div className="w-28 h-3 rounded bg-muted/60" />
+                  <Skeleton className="w-36 h-4 rounded" />
+                  <Skeleton className="w-28 h-3 rounded" />
                 </div>
-                <div className="w-7 h-7 rounded-lg bg-muted" />
+                <Skeleton className="w-7 h-7 rounded-lg" />
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border space-y-2">
-                    <div className="w-20 h-2.5 rounded bg-muted" />
-                    <div className="w-10 h-5 rounded bg-muted" />
+                  <div key={i} className="p-3 rounded-lg border border-border space-y-2">
+                    <Skeleton className="w-20 h-2.5 rounded" />
+                    <Skeleton className="w-10 h-5 rounded" />
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="pt-3 border-t border-border flex gap-2">
-              <div className="flex-1 h-7 rounded-lg bg-muted" />
-              <div className="flex-1 h-7 rounded-lg bg-muted" />
-              <div className="flex-1 h-7 rounded-lg bg-muted" />
+              <Skeleton className="flex-1 h-7 rounded-lg" />
+              <Skeleton className="flex-1 h-7 rounded-lg" />
+              <Skeleton className="flex-1 h-7 rounded-lg" />
             </div>
           </Card>
         </div>

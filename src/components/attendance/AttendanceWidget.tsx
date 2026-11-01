@@ -19,6 +19,7 @@ import type { Attendance, Branch, Shift } from '../../types'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
+import { Skeleton } from '../ui/skeleton'
 
 const DEFAULT_LAT = -6.225014
 const DEFAULT_LNG = 106.809657
@@ -726,30 +727,44 @@ export const AttendanceWidget: React.FC = () => {
         <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/15">
           <div className="text-[11px] font-medium text-primary uppercase tracking-wide">Jadwal Shift</div>
           <div className="text-sm font-semibold text-foreground mt-1">
-            {activeShift?.start_time ? activeShift.start_time.slice(0, 5) : '08:30'} -{' '}
-            {activeShift?.end_time ? activeShift.end_time.slice(0, 5) : '17:30'} WIB
+            {isLoading ? (
+              <Skeleton className="h-5 w-28" />
+            ) : (
+              <>
+                {activeShift?.start_time ? activeShift.start_time.slice(0, 5) : '08:30'} -{' '}
+                {activeShift?.end_time ? activeShift.end_time.slice(0, 5) : '17:30'} WIB
+              </>
+            )}
           </div>
-          {activeShift?.name && (
+          {isLoading ? (
+            <Skeleton className="h-3.5 w-20 mt-1" />
+          ) : activeShift?.name ? (
             <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{activeShift.name}</div>
-          )}
+          ) : null}
         </div>
 
         <div className="p-3.5 rounded-xl bg-secondary/25 border border-secondary/40">
           <div className="text-[11px] font-medium text-foreground/80 uppercase tracking-wide">Toleransi</div>
           <div className="text-sm font-semibold text-foreground mt-1">
-            {activeShift?.late_tolerance_minutes ?? 15} Menit
-            {(() => {
-              const start = activeShift?.start_time ? activeShift.start_time.slice(0, 5) : '08:30'
-              const tol = activeShift?.late_tolerance_minutes ?? 15
-              const parts = start.split(':')
-              const h = parseInt(parts[0], 10)
-              const m = parseInt(parts[1], 10)
-              if (isNaN(h) || isNaN(m)) return ''
-              const total = h * 60 + m + tol
-              const cutH = Math.floor(total / 60) % 24
-              const cutM = total % 60
-              return ` (s/d ${String(cutH).padStart(2, '0')}:${String(cutM).padStart(2, '0')})`
-            })()}
+            {isLoading ? (
+              <Skeleton className="h-5 w-24" />
+            ) : (
+              <>
+                {activeShift?.late_tolerance_minutes ?? 15} Menit
+                {(() => {
+                  const start = activeShift?.start_time ? activeShift.start_time.slice(0, 5) : '08:30'
+                  const tol = activeShift?.late_tolerance_minutes ?? 15
+                  const parts = start.split(':')
+                  const h = parseInt(parts[0], 10)
+                  const m = parseInt(parts[1], 10)
+                  if (isNaN(h) || isNaN(m)) return ''
+                  const total = h * 60 + m + tol
+                  const cutH = Math.floor(total / 60) % 24
+                  const cutM = total % 60
+                  return ` (s/d ${String(cutH).padStart(2, '0')}:${String(cutM).padStart(2, '0')})`
+                })()}
+              </>
+            )}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5">Batas Tepat Waktu</div>
         </div>
@@ -757,7 +772,9 @@ export const AttendanceWidget: React.FC = () => {
         <div className="p-3.5 rounded-xl bg-muted/60 border border-border">
           <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Status Hari Ini</div>
           <div className="mt-1">
-            {hasClockedIn ? (
+            {isLoading ? (
+              <Skeleton className="h-5 w-20" />
+            ) : hasClockedIn ? (
               <Badge variant={attendance?.status === 'late' ? 'warning' : 'success'} className="text-xs">
                 {attendance?.status === 'late'
                   ? `Terlambat (${attendance.late_minutes}m)`

@@ -10,6 +10,7 @@ import { Pagination } from '../common/Pagination'
 import { useAuth } from '../../context/AuthContext'
 import { approvalService } from '../../services/api'
 import type { LeaveRequest, OvertimeRequest } from '../../types'
+import { Skeleton } from '../ui/skeleton'
 
 export const ApprovalPanel: React.FC = () => {
   const { user } = useAuth()
@@ -181,11 +182,22 @@ export const ApprovalPanel: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
-                    Memuat permohonan cuti...
-                  </td>
-                </tr>
+                [1, 2, 3, 4].map((i) => (
+                  <tr key={i}>
+                    <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
+                    <td className="py-3 px-3"><Skeleton className="h-4 w-28" /></td>
+                    <td className="py-3 px-3"><Skeleton className="h-4 w-32" /></td>
+                    <td className="py-3 px-3"><Skeleton className="h-4 w-16" /></td>
+                    <td className="py-3 px-3"><Skeleton className="h-5 w-20 rounded-md" /></td>
+                    <td className="py-3 px-3"><Skeleton className="h-4 w-36" /></td>
+                    <td className="py-3 px-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Skeleton className="h-7 w-16 rounded-lg" />
+                        <Skeleton className="h-7 w-16 rounded-lg" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : pendingLeaves.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
@@ -272,11 +284,21 @@ export const ApprovalPanel: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground font-normal">
-                    Memuat permohonan lembur...
-                  </td>
-                </tr>
+                [1, 2, 3, 4].map((i) => (
+                  <tr key={i}>
+                    <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
+                    <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
+                    <td className="py-3 px-3"><Skeleton className="h-4 w-28" /></td>
+                    <td className="py-3 px-3"><Skeleton className="h-4 w-16" /></td>
+                    <td className="py-3 px-3"><Skeleton className="h-4 w-40" /></td>
+                    <td className="py-3 px-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Skeleton className="h-7 w-16 rounded-lg" />
+                        <Skeleton className="h-7 w-16 rounded-lg" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : pendingOvertimes.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground font-normal">

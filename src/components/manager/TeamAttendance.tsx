@@ -16,6 +16,7 @@ import { Avatar } from '../common/Avatar'
 import { Pagination } from '../common/Pagination'
 import api from '../../services/api'
 import type { Attendance, ClockDetails } from '../../types'
+import { Skeleton } from '../ui/skeleton'
 
 export const TeamAttendance: React.FC = () => {
   const [viewMode, setViewMode] = useState<'monthly' | 'daily'>('monthly')
@@ -308,9 +309,27 @@ export const TeamAttendance: React.FC = () => {
 
         {/* Attendance Records Table */}
         {loading ? (
-          <div className="p-10 text-center text-muted-foreground flex flex-col items-center justify-center space-y-2">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs font-normal">Memuat rekaman presensi tim...</span>
+          <div className="p-4 space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border/60 bg-muted/20">
+                <div className="flex items-center space-x-3 w-1/3">
+                  <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+                  <div className="space-y-1.5 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+                <div className="space-y-1.5 w-1/4">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+                <div className="space-y-1.5 w-1/4">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+                <Skeleton className="h-6 w-20 rounded-md shrink-0" />
+              </div>
+            ))}
           </div>
         ) : filteredRecords.length === 0 ? (
           <div className="p-10 text-center text-muted-foreground flex flex-col items-center justify-center space-y-1.5 font-normal">

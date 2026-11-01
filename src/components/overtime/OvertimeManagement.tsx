@@ -228,7 +228,7 @@ export const OvertimeManagement: React.FC = () => {
           <tbody className="divide-y divide-border">
             {isLoading ? (
               [1, 2, 3, 4, 5].map((i) => (
-                <tr key={i} className="animate-pulse">
+                <tr key={i}>
                   <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
                   <td className="py-3 px-3"><Skeleton className="h-4 w-20" /></td>
                   <td className="py-3 px-3"><Skeleton className="h-4 w-28" /></td>
