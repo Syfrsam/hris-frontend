@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   Add01Icon,
-  Alert02Icon,
+  AlertCircleIcon,
   Cancel01Icon,
   CheckmarkCircle01Icon,
   Clock01Icon,
@@ -9,6 +9,7 @@ import {
   FloppyDiskIcon,
   InformationCircleIcon,
   RefreshIcon,
+  Search01Icon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
 import { branchService, shiftService } from '../../services/api'
@@ -19,8 +20,9 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Skeleton } from '../ui/skeleton'
 
-// SVG Delete icon
-const TrashIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+type QuickFilterKey = 'all' | 'active' | 'branch' | 'inactive'
+
+const TrashIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
   <svg
     className={className}
     viewBox="0 0 24 24"
@@ -44,6 +46,10 @@ export const ShiftSettings: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isSaving, setIsSaving] = useState<boolean>(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [activeFilterKey, setActiveFilterKey] = useState<QuickFilterKey>('all')
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
@@ -128,15 +134,14 @@ export const ShiftSettings: React.FC = () => {
     setEditingShift(null)
   }
 
-  // Calculate duration between start and end time
   const calculateDuration = (start: string, end: string) => {
     const [startH, startM] = start.split(':').map(Number)
     const [endH, endM] = end.split(':').map(Number)
     if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) return '-'
 
-    let diffMinutes = (endH * 60 + endM) - (startH * 60 + startM)
+    let diffMinutes = endH * 60 + endM - (startH * 60 + startM)
     if (diffMinutes < 0) {
-      diffMinutes += 24 * 60 // Shift crosses midnight
+      diffMinutes += 24 * 60
     }
 
     const hours = Math.floor(diffMinutes / 60)
@@ -144,7 +149,6 @@ export const ShiftSettings: React.FC = () => {
     return `${hours} Jam ${mins > 0 ? `${mins} Menit` : ''}`.trim()
   }
 
-  // Calculate late tolerance cutoff time
   const calculateCutoff = (start: string, tolMinutes: number) => {
     const [startH, startM] = start.split(':').map(Number)
     if (isNaN(startH) || isNaN(startM)) return '-'
@@ -222,189 +226,234 @@ export const ShiftSettings: React.FC = () => {
     }
   }
 
-  const activeCount = shifts.filter((s) => s.is_active).length
+  // Filtered shifts based on search query and selected filter card
+  const filteredShifts = useMemo(() => {
+    return shifts.filter((s) => {
+      const matchQuery =
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.branch?.name && s.branch.name.toLowerCase().includes(searchQuery.toLowerCase()))
+
+      let matchFilter = true
+      if (activeFilterKey === 'active') matchFilter = s.is_active !== false
+      if (activeFilterKey === 'inactive') matchFilter = s.is_active === false
+      if (activeFilterKey === 'branch') matchFilter = Boolean(s.branch_id)
+
+      return matchQuery && matchFilter
+    })
+  }, [shifts, searchQuery, activeFilterKey])
+
+  const totalCount = shifts.length
+  const activeCount = shifts.filter((s) => s.is_active !== false).length
+  const branchCount = shifts.filter((s) => Boolean(s.branch_id)).length
+  const inactiveCount = shifts.filter((s) => s.is_active === false).length
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            Jadwal Shift & Jam Kerja
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Konfigurasi jam masuk, jam pulang, dan batas toleransi keterlambatan presensi karyawan.
-          </p>
-        </div>
+    <div className="space-y-5 sm:space-y-6 font-sans text-xs sm:text-sm">
+      {/* Header Banner - Matches Peraturan Denda & Master Cuti */}
+      <div className="bg-primary text-primary-foreground p-5 sm:p-6 rounded-2xl shadow-xs relative overflow-hidden">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="max-w-2xl">
+            <h2 className="text-base sm:text-xl font-semibold tracking-tight text-white">
+              Jadwal Shift & Jam Kerja
+            </h2>
+            <p className="text-primary-foreground/85 text-xs mt-1 font-normal leading-relaxed">
+              Atur jam masuk, jam pulang, toleransi keterlambatan presensi, dan jadwal operasional kerja karyawan.
+            </p>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadData}
-            disabled={isLoading}
-            className="h-10 px-3 cursor-pointer"
-          >
-            <Icon icon={RefreshIcon} size={16} className={isLoading ? 'animate-spin' : ''} />
-            <span className="ml-1.5 hidden sm:inline">Muat Ulang</span>
-          </Button>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={loadData}
+              disabled={isLoading}
+              className="h-8.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Segarkan data shift"
+            >
+              <Icon icon={RefreshIcon} size={14} className={isLoading ? 'animate-spin' : ''} />
+              <span>Segarkan</span>
+            </button>
 
-          <Button
-            size="sm"
-            onClick={openCreateModal}
-            className="h-10 px-4 cursor-pointer"
-          >
-            <Icon icon={Add01Icon} size={16} />
-            <span className="ml-1.5 font-medium">Tambah Shift</span>
-          </Button>
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="h-8.5 px-3.5 rounded-xl bg-white text-primary hover:bg-white/95 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            >
+              <Icon icon={Add01Icon} size={14} />
+              <span>Tambah Shift</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Inline Feedback Banner */}
+      {/* Feedback Banner - Matches Peraturan Denda */}
       {feedback && (
         <div
-          className={`p-4 rounded-xl border flex items-start gap-3 text-sm ${
+          role="status"
+          className={`p-3.5 sm:p-4 rounded-xl text-xs flex items-start space-x-2.5 border font-normal transition-all duration-200 ${
             feedback.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-200'
-              : 'bg-rose-500/10 border-rose-500/20 text-rose-800 dark:text-rose-200'
+              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25'
+              : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25'
           }`}
         >
           <Icon
-            icon={feedback.type === 'success' ? CheckmarkCircle01Icon : Alert02Icon}
-            size={18}
+            icon={feedback.type === 'success' ? CheckmarkCircle01Icon : AlertCircleIcon}
+            size={16}
             className="shrink-0 mt-0.5"
           />
-          <div className="flex-1 font-medium">{feedback.message}</div>
+          <div className="flex-1 leading-relaxed">{feedback.message}</div>
           <button
             type="button"
             onClick={() => setFeedback(null)}
-            className="text-muted-foreground hover:text-foreground cursor-pointer p-1"
+            className="p-1 rounded-md hover:bg-foreground/5 cursor-pointer text-muted-foreground hover:text-foreground shrink-0"
+            aria-label="Tutup notifikasi"
           >
             <Icon icon={Cancel01Icon} size={14} />
           </button>
         </div>
       )}
 
-      {/* Highlight Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="p-4 bg-card border-border/80 shadow-xs">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-            Total Shift
-          </div>
-          <div className="text-2xl font-bold text-foreground mt-1">
-            {isLoading ? <Skeleton className="h-7 w-12" /> : shifts.length}
-          </div>
-          <div className="text-[11px] text-muted-foreground mt-0.5">
-            {activeCount} shift aktif
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-card border-border/80 shadow-xs">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-            Jam Masuk Standar
-          </div>
-          <div className="text-2xl font-bold text-foreground mt-1">
-            {isLoading ? (
-              <Skeleton className="h-7 w-20" />
-            ) : shifts[0]?.start_time ? (
-              `${shifts[0].start_time.slice(0, 5)} WIB`
-            ) : (
-              '08:30 WIB'
-            )}
-          </div>
-          <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
-            {shifts[0]?.name || 'Shift Utama'}
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-card border-border/80 shadow-xs">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-            Jam Pulang Standar
-          </div>
-          <div className="text-2xl font-bold text-foreground mt-1">
-            {isLoading ? (
-              <Skeleton className="h-7 w-20" />
-            ) : shifts[0]?.end_time ? (
-              `${shifts[0].end_time.slice(0, 5)} WIB`
-            ) : (
-              '17:30 WIB'
-            )}
-          </div>
-          <div className="text-[11px] text-muted-foreground mt-0.5">
-            Durasi {shifts[0] ? calculateDuration(shifts[0].start_time.slice(0, 5), shifts[0].end_time.slice(0, 5)) : '9 Jam'}
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-card border-border/80 shadow-xs">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-            Toleransi Terlambat
-          </div>
-          <div className="text-2xl font-bold text-foreground mt-1">
-            {isLoading ? (
-              <Skeleton className="h-7 w-16" />
-            ) : (
-              `${shifts[0]?.late_tolerance_minutes ?? 15} Menit`
-            )}
-          </div>
-          <div className="text-[11px] text-muted-foreground mt-0.5">
-            Batas tepat waktu s/d{' '}
-            {shifts[0]
-              ? calculateCutoff(shifts[0].start_time.slice(0, 5), shifts[0].late_tolerance_minutes ?? 15)
-              : '08:45'}
-          </div>
-        </Card>
+      {/* Scheme Cards - Matches Master Cuti & Peraturan Denda Style */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          {
+            key: 'all' as QuickFilterKey,
+            label: 'Semua Shift',
+            desc: 'Seluruh jadwal kerja master',
+            count: totalCount,
+            subtitle: `${activeCount} shift aktif`,
+          },
+          {
+            key: 'active' as QuickFilterKey,
+            label: 'Shift Aktif',
+            desc: 'Berlaku pada mesin presensi',
+            count: activeCount,
+            subtitle: 'Digunakan harian',
+          },
+          {
+            key: 'branch' as QuickFilterKey,
+            label: 'Khusus Cabang',
+            desc: 'Jadwal spesifik kantor',
+            count: branchCount,
+            subtitle: `${branchCount} lokasi cabang`,
+          },
+          {
+            key: 'inactive' as QuickFilterKey,
+            label: 'Nonaktif / Arsip',
+            desc: 'Disembunyikan dari presensi',
+            count: inactiveCount,
+            subtitle: 'Arsip kebijakan',
+          },
+        ].map((card) => {
+          const isSelected = activeFilterKey === card.key
+          return (
+            <div
+              key={card.key}
+              onClick={() => setActiveFilterKey(card.key)}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all shadow-xs ${
+                isSelected
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                  : 'border-border bg-card hover:bg-muted/40'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-xs font-medium text-foreground">{card.label}</div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 font-normal leading-relaxed">
+                    {card.desc}
+                  </p>
+                </div>
+                <span className="text-xl font-medium text-foreground tabular-nums tracking-tight">
+                  {isLoading ? '-' : card.count}
+                </span>
+              </div>
+              <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground font-normal">
+                <span>{isLoading ? '...' : card.subtitle}</span>
+                <span className={isSelected ? 'text-primary font-medium' : 'text-muted-foreground/80'}>
+                  {isSelected ? 'Aktif Terfilter' : 'Klik Filter'}
+                </span>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
-      {/* Main Shift Listing */}
-      <Card className="p-0 overflow-hidden border-border/80 shadow-xs">
-        <div className="p-4 sm:p-5 border-b border-border/70 flex items-center justify-between">
+      {/* Main Table Card - Matches Master Cuti & Role Management */}
+      <Card className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-4">
+        {/* Card Header & Search Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
           <div>
-            <CardTitle className="text-base sm:text-lg font-semibold">Daftar Jadwal Shift Kerja</CardTitle>
-            <CardDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              Jadwal yang digunakan mesin presensi untuk kalkulasi tepat waktu & keterlambatan.
+            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+              <Icon icon={Clock01Icon} size={18} className="text-primary" />
+              <span>Daftar Master Jadwal Shift & Jam Masuk</span>
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground mt-0.5 font-normal">
+              Jadwal yang digunakan sistem untuk evaluasi presensi tepat waktu dan denda keterlambatan.
             </CardDescription>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+            <div className="relative w-full sm:w-60">
+              <Icon
+                icon={Search01Icon}
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari jadwal shift..."
+                className="pl-8 text-xs h-8.5 rounded-xl border-border bg-background"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
+                >
+                  <Icon icon={Cancel01Icon} size={12} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Content Body */}
         {isLoading ? (
-          <div className="p-6 space-y-3">
+          <div className="p-4 space-y-3">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-16 w-full rounded-xl" />
+              <Skeleton key={i} className="h-12 w-full rounded-xl" />
             ))}
           </div>
-        ) : shifts.length === 0 ? (
-          <div className="p-12 text-center">
-            <Icon icon={Clock01Icon} size={40} className="mx-auto text-muted-foreground/40 mb-3" />
-            <h3 className="text-sm font-semibold text-foreground">Belum ada jadwal shift</h3>
-            <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-              Tambahkan shift kerja baru agar karyawan dapat melakukan presensi dengan jam kerja yang teratur.
+        ) : filteredShifts.length === 0 ? (
+          <div className="p-10 text-center space-y-2">
+            <Icon icon={Clock01Icon} size={36} className="mx-auto text-muted-foreground/40" />
+            <div className="text-xs font-semibold text-foreground">
+              {searchQuery ? 'Tidak ada shift yang cocok' : 'Belum ada data shift'}
+            </div>
+            <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
+              {searchQuery
+                ? `Tidak ditemukan hasil pencarian untuk "${searchQuery}". Coba kata kunci lain.`
+                : 'Silakan tambahkan jadwal shift kerja baru untuk mengatur jam presensi karyawan.'}
             </p>
-            <Button
-              size="sm"
-              onClick={openCreateModal}
-              className="mt-4 h-10 px-4 cursor-pointer"
-            >
-              <Icon icon={Add01Icon} size={16} />
-              <span className="ml-1.5">Tambah Shift Pertama</span>
-            </Button>
           </div>
         ) : (
           <>
             {/* Desktop Table View (>= 640px) */}
             <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-border/70 bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    <th className="py-3 px-4">Nama Shift</th>
-                    <th className="py-3 px-4">Jam Kerja</th>
-                    <th className="py-3 px-4">Toleransi</th>
-                    <th className="py-3 px-4">Cabang</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Aksi</th>
+                  <tr className="border-b border-border bg-muted/30 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    <th className="py-2.5 px-3">Nama Shift</th>
+                    <th className="py-2.5 px-3">Jam Masuk - Pulang</th>
+                    <th className="py-2.5 px-3">Toleransi Terlambat</th>
+                    <th className="py-2.5 px-3">Cabang Kantor</th>
+                    <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-3 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/60">
-                  {shifts.map((shift) => {
+                <tbody className="divide-y divide-border">
+                  {filteredShifts.map((shift) => {
                     const start = shift.start_time ? shift.start_time.slice(0, 5) : '08:30'
                     const end = shift.end_time ? shift.end_time.slice(0, 5) : '17:30'
                     const tol = shift.late_tolerance_minutes ?? 15
@@ -412,47 +461,53 @@ export const ShiftSettings: React.FC = () => {
                     const duration = calculateDuration(start, end)
 
                     return (
-                      <tr key={shift.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="py-3.5 px-4">
+                      <tr key={shift.id} className="hover:bg-muted/20 transition-colors">
+                        <td className="py-3 px-3">
                           <div className="font-semibold text-foreground">{shift.name}</div>
-                          <div className="text-xs text-muted-foreground mt-0.5">Durasi {duration}</div>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <div className="font-medium text-foreground">
-                            {start} - {end} <span className="text-xs text-muted-foreground">WIB</span>
+                          <div className="text-[10px] text-muted-foreground font-normal">
+                            Durasi {duration}
                           </div>
                         </td>
-                        <td className="py-3.5 px-4">
+                        <td className="py-3 px-3">
+                          <div className="font-medium text-foreground">
+                            {start} - {end} <span className="text-[10px] text-muted-foreground">WIB</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3">
                           <div className="font-medium text-foreground">{tol} Menit</div>
-                          <div className="text-xs text-muted-foreground mt-0.5">s/d {cutoff} WIB</div>
+                          <div className="text-[10px] text-muted-foreground font-normal">
+                            s/d {cutoff} WIB
+                          </div>
                         </td>
-                        <td className="py-3.5 px-4 text-xs text-muted-foreground">
-                          {shift.branch?.name || 'Semua Cabang'}
+                        <td className="py-3 px-3 text-muted-foreground">
+                          {shift.branch?.name || (
+                            <span className="text-muted-foreground/70 font-normal">Semua Cabang</span>
+                          )}
                         </td>
-                        <td className="py-3.5 px-4">
+                        <td className="py-3 px-3">
                           <Badge
                             variant={shift.is_active ? 'success' : 'secondary'}
-                            className="text-[11px]"
+                            className="text-[10px] px-2 py-0.2"
                           >
                             {shift.is_active ? 'Aktif' : 'Nonaktif'}
                           </Badge>
                         </td>
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="py-3 px-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => openEditModal(shift)}
-                              className="h-8.5 px-2.5 text-xs cursor-pointer"
+                              className="h-7.5 px-2.5 text-xs rounded-lg cursor-pointer font-medium"
                             >
-                              <Icon icon={Edit02Icon} size={14} />
+                              <Icon icon={Edit02Icon} size={13} />
                               <span className="ml-1">Edit</span>
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => setDeleteTargetShift(shift)}
-                              className="h-8.5 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 cursor-pointer"
+                              className="h-7.5 px-2 text-xs rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 cursor-pointer font-medium"
                             >
                               <TrashIcon className="w-3.5 h-3.5" />
                               <span className="ml-1">Hapus</span>
@@ -467,8 +522,8 @@ export const ShiftSettings: React.FC = () => {
             </div>
 
             {/* Mobile Card Reflow (< 640px) */}
-            <div className="block sm:hidden divide-y divide-border/60">
-              {shifts.map((shift) => {
+            <div className="block sm:hidden divide-y divide-border">
+              {filteredShifts.map((shift) => {
                 const start = shift.start_time ? shift.start_time.slice(0, 5) : '08:30'
                 const end = shift.end_time ? shift.end_time.slice(0, 5) : '17:30'
                 const tol = shift.late_tolerance_minutes ?? 15
@@ -476,54 +531,54 @@ export const ShiftSettings: React.FC = () => {
                 const duration = calculateDuration(start, end)
 
                 return (
-                  <div key={shift.id} className="p-4 space-y-3">
+                  <div key={shift.id} className="py-3.5 space-y-2.5">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="font-semibold text-foreground text-sm">{shift.name}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {shift.branch?.name || 'Semua Cabang'}
+                        <div className="font-semibold text-foreground text-xs">{shift.name}</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                          {shift.branch?.name || 'Semua Cabang Kantor'}
                         </div>
                       </div>
                       <Badge
                         variant={shift.is_active ? 'success' : 'secondary'}
-                        className="text-[11px] shrink-0"
+                        className="text-[10px] px-2 py-0.2 shrink-0"
                       >
                         {shift.is_active ? 'Aktif' : 'Nonaktif'}
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-2.5 rounded-lg border border-border/50">
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-muted/30 p-2.5 rounded-xl border border-border">
                       <div>
-                        <div className="text-muted-foreground">Jam Kerja:</div>
-                        <div className="font-semibold text-foreground mt-0.5">
+                        <div className="text-[10px] text-muted-foreground">Jam Kerja:</div>
+                        <div className="font-semibold text-foreground mt-0.5 text-xs">
                           {start} - {end} WIB
                         </div>
                         <div className="text-[10px] text-muted-foreground">Durasi {duration}</div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground">Toleransi Keterlambatan:</div>
-                        <div className="font-semibold text-foreground mt-0.5">{tol} Menit</div>
+                        <div className="text-[10px] text-muted-foreground">Toleransi Terlambat:</div>
+                        <div className="font-semibold text-foreground mt-0.5 text-xs">{tol} Menit</div>
                         <div className="text-[10px] text-muted-foreground">s/d {cutoff} WIB</div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 pt-1">
+                    <div className="flex items-center gap-2 pt-0.5">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => openEditModal(shift)}
-                        className="flex-1 h-11 text-xs cursor-pointer"
+                        className="flex-1 h-8 text-xs rounded-lg cursor-pointer font-medium"
                       >
-                        <Icon icon={Edit02Icon} size={14} />
+                        <Icon icon={Edit02Icon} size={13} />
                         <span className="ml-1">Edit Shift</span>
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setDeleteTargetShift(shift)}
-                        className="h-11 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 cursor-pointer"
+                        className="h-8 px-2.5 text-xs rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 cursor-pointer font-medium"
                       >
-                        <TrashIcon className="w-4 h-4" />
+                        <TrashIcon className="w-3.5 h-3.5" />
                         <span className="ml-1">Hapus</span>
                       </Button>
                     </div>
@@ -535,239 +590,276 @@ export const ShiftSettings: React.FC = () => {
         )}
       </Card>
 
-      {/* Info Card explaining Attendance Logic */}
-      <Card className="p-4 sm:p-5 bg-muted/30 border-border/80">
+      {/* Info Card - Consistent with Leave & Penalty Settings */}
+      <Card className="p-4 sm:p-5 bg-card border border-border rounded-2xl shadow-xs">
         <div className="flex items-start gap-3">
-          <Icon icon={InformationCircleIcon} size={20} className="shrink-0 text-primary mt-0.5" />
-          <div className="space-y-1 text-xs sm:text-sm text-muted-foreground">
-            <div className="font-semibold text-foreground">Bagaimana sistem menghitung keterlambatan?</div>
-            <p>
-              Karyawan yang melakukan presensi masuk sebelum jam masuk atau dalam rentang toleransi
-              keterlambatan akan dicatat sebagai <strong>Tepat Waktu</strong>.
-            </p>
-            <p>
-              Jika presensi masuk dilakukan setelah waktu toleransi habis (misal lewat dari batas cut-off),
-              sistem secara otomatis mencatat status <strong>Terlambat</strong> dan menghitung total menit
-              keterlambatan sebagai dasar penalti denda payroll.
+          <Icon icon={InformationCircleIcon} size={18} className="shrink-0 text-primary mt-0.5" />
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <div className="font-semibold text-foreground">Ketentuan Toleransi Presensi & Denda</div>
+            <p className="leading-relaxed">
+              Karyawan yang melakukan presensi masuk dalam rentang toleransi keterlambatan akan diakui sebagai{' '}
+              <strong className="text-foreground">Tepat Waktu</strong>. Presensi setelah cut-off toleransi akan
+              otomatis dicatat sebagai <strong className="text-foreground">Terlambat</strong> dan dihitung
+              dalam kalkulasi denda payroll bulanan.
             </p>
           </div>
         </div>
       </Card>
 
-      {/* Add / Edit Modal */}
+      {/* Add / Edit Modal - Matches Master Cuti & User Management */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-background border border-border w-full max-w-lg rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
-            <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold text-foreground">
-                  {editingShift ? 'Edit Jadwal Shift' : 'Tambah Jadwal Shift Baru'}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Tentukan jam masuk, jam pulang, dan toleransi kehadiran.
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fade-in"
+          onClick={closeModal}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-lg my-auto max-h-[88vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-5 py-3 border-b border-border flex items-center justify-between shrink-0 bg-card">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5">
+                  <Badge variant="dark" className="text-[9px] px-1.5 py-0.2">
+                    Superadmin
+                  </Badge>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {editingShift ? 'Edit Konfigurasi Shift' : 'Tambah Jadwal Shift Baru'}
+                  </h3>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {editingShift
+                    ? `Perbarui jam masuk, jam pulang, dan toleransi untuk ${editingShift.name}.`
+                    : 'Daftarkan jadwal shift kerja baru untuk perhitungan presensi karyawan.'}
                 </p>
               </div>
+
               <button
                 type="button"
                 onClick={closeModal}
-                className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer"
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                aria-label="Tutup modal"
               >
-                <Icon icon={Cancel01Icon} size={18} />
+                <Icon icon={Cancel01Icon} size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
-              {/* Shift Name */}
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  Nama Jadwal Shift <span className="text-rose-500">*</span>
-                </label>
-                <Input
-                  type="text"
-                  placeholder="Contoh: Shift Reguler, Shift Pagi, Shift Middle"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="h-10 text-sm"
-                />
-              </div>
-
-              {/* Work Hours: Start Time & End Time */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">
-                    Jam Masuk <span className="text-rose-500">*</span>
+            {/* Modal Body */}
+            <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+              <form id="shift-settings-form" onSubmit={handleSave} className="space-y-3.5 text-xs">
+                {/* Shift Name */}
+                <div className="space-y-1">
+                  <label className="font-medium text-foreground block">
+                    Nama Jadwal Shift <span className="text-rose-500">*</span>
                   </label>
                   <Input
-                    type="time"
-                    value={formData.start_time}
-                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Contoh: Shift Reguler (Pagi)"
+                    className="text-xs h-8.5 rounded-lg"
                     required
-                    className="h-10 text-sm"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">
-                    Jam Pulang <span className="text-rose-500">*</span>
-                  </label>
-                  <Input
-                    type="time"
-                    value={formData.end_time}
-                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                    required
-                    className="h-10 text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Late Tolerance & Branch */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">
-                    Toleransi Terlambat (Menit) <span className="text-rose-500">*</span>
-                  </label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={180}
-                    value={formData.late_tolerance_minutes}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        late_tolerance_minutes: parseInt(e.target.value, 10) || 0,
-                      })
-                    }
-                    required
-                    className="h-10 text-sm"
-                  />
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    Batas toleransi kehadiran tepat waktu.
+                  <p className="text-[10px] text-muted-foreground">
+                    Label shift yang tampil pada portal dan widget presensi karyawan.
                   </p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">
-                    Cabang Kantor (Opsional)
+                {/* Work Hours: Start Time & End Time */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-medium text-foreground block">
+                      Jam Masuk Presensi <span className="text-rose-500">*</span>
+                    </label>
+                    <Input
+                      type="time"
+                      value={formData.start_time}
+                      onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                      className="text-xs h-8.5 rounded-lg"
+                      required
+                    />
+                    <p className="text-[10px] text-muted-foreground">Waktu awal mulai jam kerja kantor.</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-medium text-foreground block">
+                      Jam Pulang Presensi <span className="text-rose-500">*</span>
+                    </label>
+                    <Input
+                      type="time"
+                      value={formData.end_time}
+                      onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                      className="text-xs h-8.5 rounded-lg"
+                      required
+                    />
+                    <p className="text-[10px] text-muted-foreground">Waktu akhir jam kerja kantor.</p>
+                  </div>
+                </div>
+
+                {/* Late Tolerance & Branch */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-medium text-foreground block">
+                      Toleransi Terlambat (Menit) <span className="text-rose-500">*</span>
+                    </label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={180}
+                      value={formData.late_tolerance_minutes}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          late_tolerance_minutes: parseInt(e.target.value, 10) || 0,
+                        })
+                      }
+                      className="text-xs h-8.5 rounded-lg"
+                      required
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                      Batas menit keterlambatan yang masih diakui tepat waktu.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-medium text-foreground block">Cabang Kantor</label>
+                    <select
+                      value={formData.branch_id ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          branch_id: e.target.value ? parseInt(e.target.value, 10) : null,
+                        })
+                      }
+                      className="w-full h-8.5 px-3 rounded-lg border border-input bg-background text-foreground text-xs focus:outline-hidden focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="">Semua Cabang Kantor</option>
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name} ({b.code})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-muted-foreground">Pilih cabang atau biarkan untuk semua.</p>
+                  </div>
+                </div>
+
+                {/* Active Checkbox */}
+                <div className="pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-lg border border-border bg-muted/20 hover:bg-muted/40 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_active}
+                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                      className="rounded border-input text-primary focus:ring-primary w-4 h-4 cursor-pointer"
+                    />
+                    <div>
+                      <span className="text-xs text-foreground font-medium block">Status Aktif</span>
+                      <span className="text-[10px] text-muted-foreground block">
+                        Jadwal shift aktif dan dapat diterapkan pada presensi karyawan.
+                      </span>
+                    </div>
                   </label>
-                  <select
-                    value={formData.branch_id ?? ''}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        branch_id: e.target.value ? parseInt(e.target.value, 10) : null,
-                      })
-                    }
-                    className="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-hidden focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="">Semua Cabang Kantor</option>
-                    {branches.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name} ({b.code})
-                      </option>
-                    ))}
-                  </select>
                 </div>
-              </div>
 
-              {/* Active Toggle */}
-              <div className="flex items-center gap-2.5 pt-1">
-                <input
-                  type="checkbox"
-                  id="shift-active-toggle"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 rounded text-primary border-input focus:ring-primary cursor-pointer"
-                />
-                <label
-                  htmlFor="shift-active-toggle"
-                  className="text-xs sm:text-sm font-medium text-foreground cursor-pointer"
-                >
-                  Aktifkan jadwal shift ini untuk presensi harian
-                </label>
-              </div>
-
-              {/* Live Preview Box */}
-              <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/15 space-y-1.5 text-xs">
-                <div className="font-semibold text-primary">Ringkasan Konfigurasi:</div>
-                <div className="text-muted-foreground">
-                  Durasi jam kerja: <strong>{calculateDuration(formData.start_time, formData.end_time)}</strong>
+                {/* Calculation Summary Pill */}
+                <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 space-y-1 text-xs">
+                  <div className="font-semibold text-primary">Simulasi Jadwal:</div>
+                  <div className="text-muted-foreground text-[11px]">
+                    Durasi kerja: <strong>{calculateDuration(formData.start_time, formData.end_time)}</strong>
+                  </div>
+                  <div className="text-muted-foreground text-[11px]">
+                    Batas tepat waktu s/d{' '}
+                    <strong>{calculateCutoff(formData.start_time, formData.late_tolerance_minutes)} WIB</strong>.
+                    Presensi setelah waktu ini dicatat terlambat.
+                  </div>
                 </div>
-                <div className="text-muted-foreground">
-                  Batas tepat waktu s/d{' '}
-                  <strong>{calculateCutoff(formData.start_time, formData.late_tolerance_minutes)} WIB</strong>.
-                  Presensi setelah waktu ini dicatat terlambat.
-                </div>
-              </div>
+              </form>
+            </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={closeModal}
-                  disabled={isSaving}
-                  className="h-10 px-4 cursor-pointer"
-                >
-                  Batal
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                  className="h-10 px-5 cursor-pointer"
-                >
-                  {isSaving ? (
-                    <>
-                      <Icon icon={RefreshIcon} size={16} className="animate-spin mr-1.5" />
-                      <span>Menyimpan...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Icon icon={FloppyDiskIcon} size={16} className="mr-1.5" />
-                      <span>{editingShift ? 'Simpan Perubahan' : 'Buat Shift'}</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
+            {/* Modal Footer */}
+            <div className="px-5 py-3 border-t border-border flex items-center justify-end gap-2 shrink-0 bg-card">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={closeModal}
+                disabled={isSaving}
+                className="h-8 text-xs cursor-pointer font-medium"
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                form="shift-settings-form"
+                size="sm"
+                disabled={isSaving}
+                className="h-8 text-xs cursor-pointer bg-primary text-primary-foreground font-medium hover:bg-primary/90"
+              >
+                {isSaving ? (
+                  <>
+                    <Icon icon={RefreshIcon} size={14} className="animate-spin mr-1.5" />
+                    <span>Menyimpan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon icon={FloppyDiskIcon} size={14} className="mr-1.5" />
+                    <span>{editingShift ? 'Simpan Perubahan' : 'Buat Shift'}</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal - Matches User Management */}
       {deleteTargetShift && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-background border border-border w-full max-w-md rounded-2xl shadow-xl p-5 space-y-4 animate-in zoom-in-95 duration-200">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fade-in"
+          onClick={() => setDeleteTargetShift(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-sm my-auto p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-600 shrink-0">
-                <Icon icon={Alert02Icon} size={20} />
+              <div className="w-9 h-9 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-600 shrink-0">
+                <TrashIcon className="w-4 h-4" />
               </div>
-              <div>
-                <h3 className="text-base font-semibold text-foreground">Hapus Jadwal Shift?</h3>
-                <p className="text-xs text-muted-foreground mt-1">
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-foreground">Hapus Jadwal Shift?</h3>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
                   Apakah Anda yakin ingin menghapus jadwal shift{' '}
-                  <strong className="text-foreground">"{deleteTargetShift.name}"</strong>? Shift yang dihapus
-                  tidak dapat dipulihkan kembali.
+                  <strong className="text-foreground">"{deleteTargetShift.name}"</strong>? Data yang telah dihapus
+                  tidak dapat dipulihkan.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={() => setDeleteTargetShift(null)}
                 disabled={isDeleting}
-                className="h-10 px-4 cursor-pointer"
+                className="h-8 text-xs cursor-pointer font-medium"
               >
                 Batal
               </Button>
               <Button
                 type="button"
+                size="sm"
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="h-10 px-4 bg-rose-600 hover:bg-rose-700 text-white cursor-pointer"
+                className="h-8 text-xs cursor-pointer bg-rose-600 hover:bg-rose-700 text-white font-medium"
               >
-                {isDeleting ? 'Menghapus...' : 'Ya, Hapus Shift'}
+                {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}
               </Button>
             </div>
           </div>
