@@ -83,6 +83,24 @@ const ChevronDown: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.
   </svg>
 )
 
+const TrashIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 6h18" />
+    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+    <line x1="10" y1="11" x2="10" y2="17" />
+    <line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+)
+
 export const UserRoleManagement: React.FC = () => {
   const { user: currentUser, refreshUser } = useAuth()
   const { toast } = useToast()
@@ -108,6 +126,8 @@ export const UserRoleManagement: React.FC = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [isCropModalOpen, setIsCropModalOpen] = useState<boolean>(false)
   const [cropSourceImage, setCropSourceImage] = useState<string | null>(null)
+  const [userToDelete, setUserToDelete] = useState<ManagedUser | null>(null)
+  const [isDeleting, setIsDeleting] = useState<boolean>(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -373,6 +393,26 @@ export const UserRoleManagement: React.FC = () => {
       toast.error(isValidation ? 'Validasi Gagal' : 'Gagal Menyimpan Akun', finalMsg)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return
+    setIsDeleting(true)
+    try {
+      const res = await userService.deleteUser(userToDelete.id)
+      if (res.data?.success) {
+        setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id))
+        const successMsg = `Akun ${userToDelete.name} berhasil dihapus dari sistem.`
+        setFeedback({ type: 'success', text: successMsg })
+        toast.success('Pengguna Dihapus', successMsg)
+        setUserToDelete(null)
+      }
+    } catch (err: any) {
+      const errMsg = err.response?.data?.message || 'Gagal menghapus akun pengguna.'
+      toast.error('Gagal Menghapus', errMsg)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -781,11 +821,22 @@ export const UserRoleManagement: React.FC = () => {
                                 isSelf
                                   ? 'opacity-40 cursor-not-allowed border-border/40 text-muted-foreground'
                                   : item.is_active
-                                  ? 'border-border/60 text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 hover:border-rose-200 cursor-pointer'
+                                  ? 'border-border/60 text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10 hover:border-amber-200 cursor-pointer'
                                   : 'border-border/60 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/10 hover:border-emerald-200 cursor-pointer'
                               }`}
                             >
                               <span>{item.is_active ? 'Nonaktifkan' : 'Aktifkan'}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={isSelf || isBusy}
+                              onClick={() => setUserToDelete(item)}
+                              title={isSelf ? 'Anda tidak dapat menghapus akun Anda sendiri' : 'Hapus akun'}
+                              className="h-7 px-2 rounded-lg text-xs font-normal border border-border/60 text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 hover:border-rose-300 dark:hover:border-rose-800 transition-colors inline-flex items-center gap-1 cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <TrashIcon className="w-3.5 h-3.5" />
+                              <span>Hapus</span>
                             </button>
                           </div>
                         </td>
@@ -1128,6 +1179,21 @@ export const UserRoleManagement: React.FC = () => {
 
               {/* Modal Footer - Fixed at Bottom */}
               <div className="pt-2.5 border-t border-border flex items-center justify-end gap-2 shrink-0">
+                {editingUser && currentUser?.id !== editingUser.id && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsModalOpen(false)
+                      setUserToDelete(editingUser)
+                    }}
+                    className="h-8 px-2.5 text-xs font-medium cursor-pointer rounded-lg border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 mr-auto flex items-center gap-1"
+                  >
+                    <TrashIcon className="w-3.5 h-3.5" />
+                    <span>Hapus Akun</span>
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -1156,6 +1222,93 @@ export const UserRoleManagement: React.FC = () => {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {userToDelete && (
+        <div
+          role="presentation"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
+          onClick={() => !isDeleting && setUserToDelete(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-user-modal-title"
+            className="relative bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shrink-0">
+                <TrashIcon className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 id="delete-user-modal-title" className="text-sm font-bold text-foreground">
+                  Hapus Akun Pengguna?
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Apakah Anda yakin ingin menghapus akun pengguna ini secara permanen dari sistem?
+                </p>
+              </div>
+            </div>
+
+            {/* Target User Info */}
+            <div className="p-3 bg-muted/40 rounded-xl border border-border flex items-center gap-3">
+              <Avatar src={userToDelete.avatar_url || null} name={userToDelete.name} size="md" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-foreground truncate">{userToDelete.name}</div>
+                <div className="text-[11px] text-muted-foreground truncate">{userToDelete.email}</div>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span className={`inline-block px-1.5 py-0.2 rounded text-[10px] font-medium border ${ROLE_BADGE_STYLES[userToDelete.primary_role] || ROLE_BADGE_STYLES.Employee}`}>
+                    {userToDelete.primary_role}
+                  </span>
+                  {userToDelete.employee && (
+                    <span className="text-[10px] text-muted-foreground">
+                      (Data Karyawan)
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed">
+              ⚠️ Seluruh sesi login, token otentikasi, dan riwayat akses pengguna ini akan dihapus.
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isDeleting}
+                onClick={() => setUserToDelete(null)}
+                className="h-8 px-3 text-xs cursor-pointer rounded-lg"
+              >
+                Batal
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={isDeleting}
+                onClick={handleDeleteUser}
+                className="h-8 px-3.5 text-xs font-semibold cursor-pointer rounded-lg bg-rose-600 hover:bg-rose-700 text-white gap-1.5"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Menghapus...</span>
+                  </>
+                ) : (
+                  <>
+                    <TrashIcon className="w-3.5 h-3.5" />
+                    <span>Hapus Akun</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}
