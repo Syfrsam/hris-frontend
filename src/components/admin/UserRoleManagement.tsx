@@ -507,7 +507,11 @@ export const UserRoleManagement: React.FC = () => {
                 )}
               </div>
               <div className="mt-1.5 pt-1.5 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground font-normal">
-                <span className="truncate">{card.subtitle}</span>
+                {isLoading ? (
+                  <SkeletonBox height={11} width={60} radius={3} />
+                ) : (
+                  <span className="truncate">{card.subtitle}</span>
+                )}
                 <span className={isSelected ? 'text-primary font-medium' : 'text-muted-foreground/70'}>
                   {isSelected ? 'Aktif' : 'Pilih'}
                 </span>
@@ -667,7 +671,7 @@ export const UserRoleManagement: React.FC = () => {
                       {/* User Info (Avatar + Name + Email) */}
                       <td className="py-2.5 px-3 align-middle overflow-hidden">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <SkeletonBox width={32} height={32} radius="50%" className="shrink-0" />
+                          <SkeletonBox width={32} height={32} radius={8} className="shrink-0" />
                           <div className="min-w-0 flex-1 space-y-1.5">
                             <SkeletonBox height={14} width="72%" radius={4} />
                             <SkeletonBox height={11} width="88%" radius={4} />
@@ -706,26 +710,39 @@ export const UserRoleManagement: React.FC = () => {
               </table>
             </div>
 
-            {/* Mobile Cards View (< 640px) */}
-            <div className="sm:hidden space-y-3">
+            {/* Mobile Card List Skeleton (< 640px) */}
+            <div className="sm:hidden divide-y divide-border rounded-xl border border-border/80 overflow-hidden bg-card">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="p-3.5 rounded-2xl border border-border/80 bg-card space-y-3 shadow-2xs">
+                <div key={i} className="p-3.5 space-y-2.5 bg-card">
+                  {/* Header: Avatar (32x32 rounded-lg) + User Info + Status Dot */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <SkeletonBox width={36} height={36} radius="50%" className="shrink-0" />
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <SkeletonBox height={14} width="75%" radius={4} />
-                        <SkeletonBox height={11} width="90%" radius={4} />
+                      <SkeletonBox width={32} height={32} radius={8} className="shrink-0" />
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <SkeletonBox height={14} width="65%" radius={4} />
+                        <SkeletonBox height={11} width="85%" radius={4} />
                       </div>
                     </div>
-                    <SkeletonBox height={20} width={52} radius={999} className="shrink-0" />
+                    <SkeletonBox height={18} width={48} radius={999} className="shrink-0" />
                   </div>
-                  <div className="pt-2.5 border-t border-border/60 flex items-center justify-between gap-2">
-                    <SkeletonBox height={22} width={88} radius={999} />
-                    <div className="flex items-center gap-1.5">
-                      <SkeletonBox height={28} width={72} radius={8} />
-                      <SkeletonBox height={28} width={62} radius={8} />
+
+                  {/* 2-Field Detail Grid (Jabatan & Tim, Peran Role) */}
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl border border-border/60 bg-muted/20">
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width={60} radius={3} />
+                      <SkeletonBox height={13} width="80%" radius={3} />
                     </div>
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width={60} radius={3} />
+                      <SkeletonBox height={13} width="70%" radius={3} />
+                    </div>
+                  </div>
+
+                  {/* 3 Action Buttons Footer (Kelola, Nonaktifkan, Hapus) */}
+                  <div className="flex items-center justify-end gap-1.5 pt-1">
+                    <SkeletonBox height={34} width="100%" radius={8} className="flex-1" />
+                    <SkeletonBox height={34} width="100%" radius={8} className="flex-1" />
+                    <SkeletonBox height={34} width={58} radius={8} className="shrink-0" />
                   </div>
                 </div>
               ))}

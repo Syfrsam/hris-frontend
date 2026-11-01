@@ -17,6 +17,7 @@ import { Card, CardTitle, CardDescription } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
+import { SkeletonBox } from '../ui/skeleton'
 
 export const BranchManagement: React.FC = () => {
   const [branches, setBranches] = useState<Branch[]>([])
@@ -321,6 +322,11 @@ export const BranchManagement: React.FC = () => {
 
             {/* Map Canvas Container */}
             <div className="w-full h-[420px] rounded-xl overflow-hidden border border-border relative z-10 shadow-inner">
+              {isLoading && (
+                <div className="absolute inset-0 z-20 bg-card/80 backdrop-blur-xs p-2">
+                  <SkeletonBox height="100%" width="100%" radius={10} />
+                </div>
+              )}
               <div ref={mapContainerRef} className="w-full h-full" />
             </div>
 
@@ -382,110 +388,142 @@ export const BranchManagement: React.FC = () => {
               </div>
             )}
 
-            <form onSubmit={handleSave} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-normal text-muted-foreground uppercase tracking-wider mb-1">
-                  Nama Cabang / Kantor
-                </label>
-                <Input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Contoh: Jakarta Head Office"
-                  className="text-xs font-normal"
-                />
+            {isLoading ? (
+              <div className="space-y-3.5 pt-1">
+                <div className="space-y-1.5">
+                  <SkeletonBox height={12} width={130} radius={4} />
+                  <SkeletonBox height={36} width="100%" radius={8} />
+                </div>
+                <div className="space-y-1.5">
+                  <SkeletonBox height={12} width={90} radius={4} />
+                  <SkeletonBox height={36} width="100%" radius={8} />
+                </div>
+                <div className="space-y-1.5">
+                  <SkeletonBox height={12} width={140} radius={4} />
+                  <SkeletonBox height={56} width="100%" radius={8} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <SkeletonBox height={12} width={90} radius={4} />
+                    <SkeletonBox height={36} width="100%" radius={8} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <SkeletonBox height={12} width={90} radius={4} />
+                    <SkeletonBox height={36} width="100%" radius={8} />
+                  </div>
+                </div>
+                <div className="space-y-2 p-3 rounded-lg bg-muted/50 border border-border">
+                  <SkeletonBox height={14} width="60%" radius={4} />
+                  <SkeletonBox height={16} width="100%" radius={4} />
+                </div>
+                <SkeletonBox height={40} width="100%" radius={8} />
               </div>
-
-              <div>
-                <label className="block text-xs font-normal text-muted-foreground uppercase tracking-wider mb-1">
-                  Kode Cabang
-                </label>
-                <Input
-                  type="text"
-                  required
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="Contoh: JKT-HQ"
-                  className="text-xs font-normal"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-normal text-muted-foreground uppercase tracking-wider mb-1">
-                  Alamat Lengkap Kantor
-                </label>
-                <textarea
-                  required
-                  rows={2}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Jl. Jenderal Sudirman Kav. 52-53..."
-                  className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-normal ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            ) : (
+              <form onSubmit={handleSave} className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-foreground uppercase tracking-wider mb-1">
-                    Latitude (Lintang)
+                  <label className="block text-xs font-normal text-muted-foreground uppercase tracking-wider mb-1">
+                    Nama Cabang / Kantor
                   </label>
                   <Input
-                    type="number"
-                    step="any"
+                    type="text"
                     required
-                    value={latitude}
-                    onChange={(e) => setLatitude(Number(e.target.value))}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Contoh: Jakarta Head Office"
                     className="text-xs font-normal"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-medium text-foreground uppercase tracking-wider mb-1">
-                    Longitude (Bujur)
+                  <label className="block text-xs font-normal text-muted-foreground uppercase tracking-wider mb-1">
+                    Kode Cabang
                   </label>
                   <Input
-                    type="number"
-                    step="any"
+                    type="text"
                     required
-                    value={longitude}
-                    onChange={(e) => setLongitude(Number(e.target.value))}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="Contoh: JKT-HQ"
                     className="text-xs font-normal"
                   />
                 </div>
-              </div>
 
-              {/* Radius Slider with live feedback */}
-              <div className="space-y-2 p-3 rounded-lg bg-muted/50 border border-border">
-                <div className="flex justify-between items-center text-xs font-normal">
-                  <span className="text-foreground">Radius Toleransi Geofence:</span>
-                  <span className="text-primary font-medium text-xs">{radiusMeters} meter</span>
+                <div>
+                  <label className="block text-xs font-normal text-muted-foreground uppercase tracking-wider mb-1">
+                    Alamat Lengkap Kantor
+                  </label>
+                  <textarea
+                    required
+                    rows={2}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Jl. Jenderal Sudirman Kav. 52-53..."
+                    className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-normal ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  />
                 </div>
-                <input
-                  type="range"
-                  min="20"
-                  max="1000"
-                  step="10"
-                  value={radiusMeters}
-                  onChange={(e) => setRadiusMeters(Number(e.target.value))}
-                  className="w-full accent-primary cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] text-muted-foreground font-normal">
-                  <span>20m</span>
-                  <span>100m (Standar)</span>
-                  <span>500m</span>
-                  <span>1000m</span>
-                </div>
-              </div>
 
-              <Button
-                type="submit"
-                disabled={isSaving || !selectedBranchId}
-                className="w-full h-10 rounded-lg font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs gap-2 mt-2 text-xs"
-              >
-                <Icon icon={FloppyDiskIcon} size={16} />
-                <span>{isSaving ? 'Menyimpan Perubahan...' : 'Simpan Koordinat & Lokasi'}</span>
-              </Button>
-            </form>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-foreground uppercase tracking-wider mb-1">
+                      Latitude (Lintang)
+                    </label>
+                    <Input
+                      type="number"
+                      step="any"
+                      required
+                      value={latitude}
+                      onChange={(e) => setLatitude(Number(e.target.value))}
+                      className="text-xs font-normal"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-foreground uppercase tracking-wider mb-1">
+                      Longitude (Bujur)
+                    </label>
+                    <Input
+                      type="number"
+                      step="any"
+                      required
+                      value={longitude}
+                      onChange={(e) => setLongitude(Number(e.target.value))}
+                      className="text-xs font-normal"
+                    />
+                  </div>
+                </div>
+
+                {/* Radius Slider with live feedback */}
+                <div className="space-y-2 p-3 rounded-lg bg-muted/50 border border-border">
+                  <div className="flex justify-between items-center text-xs font-normal">
+                    <span className="text-foreground">Radius Toleransi Geofence:</span>
+                    <span className="text-primary font-medium text-xs">{radiusMeters} meter</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="20"
+                    max="1000"
+                    step="10"
+                    value={radiusMeters}
+                    onChange={(e) => setRadiusMeters(Number(e.target.value))}
+                    className="w-full accent-primary cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground font-normal">
+                    <span>20m</span>
+                    <span>100m (Standar)</span>
+                    <span>500m</span>
+                    <span>1000m</span>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isSaving || !selectedBranchId}
+                  className="w-full h-10 rounded-lg font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs gap-2 mt-2 text-xs transition-colors cursor-pointer"
+                >
+                  <Icon icon={FloppyDiskIcon} size={16} />
+                  <span>{isSaving ? 'Menyimpan Perubahan...' : 'Simpan Koordinat & Lokasi'}</span>
+                </Button>
+              </form>
+            )}
           </Card>
         </div>
       </div>

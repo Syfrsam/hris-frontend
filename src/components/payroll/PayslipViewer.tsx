@@ -90,87 +90,230 @@ export const PayslipViewer: React.FC = () => {
         </div>
       </div>
 
-      {/* Payslips Table */}
-      <div className="my-4 overflow-x-auto rounded-xl border border-border/80 bg-card">
-        <table className="w-full text-left border-collapse table-fixed text-xs min-w-[760px]">
-          <colgroup>
-            <col className="w-[18%]" />
-            <col className="w-[16%]" />
-            <col className="w-[14%]" />
-            <col className="w-[15%]" />
-            <col className="w-[13%]" />
-            <col className="w-[14%]" />
-            <col className="w-[10%]" />
-          </colgroup>
-          <thead>
-            <tr className="bg-muted/40 border-b border-border/80 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              <th className="py-2.5 px-3">No. Slip Gaji</th>
-              <th className="py-2.5 px-3">Periode Payroll</th>
-              <th className="py-2.5 px-3">Gaji Pokok</th>
-              <th className="py-2.5 px-3">Tunjangan & Lembur</th>
-              <th className="py-2.5 px-3">Potongan</th>
-              <th className="py-2.5 px-3">Take Home Pay</th>
-              <th className="py-2.5 px-3 text-right">Aksi Dokumen</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/60 bg-card text-xs">
-            {isLoading ? (
-              [1, 2, 3, 4].map((i) => (
-                <tr key={i} className="hover:bg-muted/20 transition-colors">
-                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="80%" radius={4} /></td>
-                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="75%" radius={4} /></td>
-                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="65%" radius={4} /></td>
-                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="60%" radius={4} /></td>
-                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="60%" radius={4} /></td>
-                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="70%" radius={4} /></td>
-                  <td className="py-2.5 px-3 align-middle text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <SkeletonBox height={28} width={32} radius={6} />
-                      <SkeletonBox height={28} width={32} radius={6} />
+      {/* Payslips Container (Desktop Table + Mobile Cards) */}
+      <div className="my-4 rounded-xl border border-border/80 bg-card overflow-hidden">
+        {isLoading ? (
+          <div>
+            {/* Desktop Table Skeleton */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left border-collapse table-fixed text-xs min-w-[760px]">
+                <colgroup>
+                  <col className="w-[18%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[10%]" />
+                </colgroup>
+                <thead>
+                  <tr className="bg-muted/40 border-b border-border/80 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2.5 px-3">No. Slip Gaji</th>
+                    <th className="py-2.5 px-3">Periode Payroll</th>
+                    <th className="py-2.5 px-3">Gaji Pokok</th>
+                    <th className="py-2.5 px-3">Tunjangan & Lembur</th>
+                    <th className="py-2.5 px-3">Potongan</th>
+                    <th className="py-2.5 px-3">Take Home Pay</th>
+                    <th className="py-2.5 px-3 text-right">Aksi Dokumen</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 bg-card text-xs">
+                  {[1, 2, 3, 4].map((i) => (
+                    <tr key={i} className="hover:bg-muted/20 transition-colors">
+                      <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="80%" radius={4} /></td>
+                      <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="75%" radius={4} /></td>
+                      <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="65%" radius={4} /></td>
+                      <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="60%" radius={4} /></td>
+                      <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="60%" radius={4} /></td>
+                      <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="70%" radius={4} /></td>
+                      <td className="py-2.5 px-3 align-middle text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <SkeletonBox height={28} width={32} radius={6} />
+                          <SkeletonBox height={28} width={32} radius={6} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards Skeleton */}
+            <div className="block sm:hidden divide-y divide-border">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-3.5 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <SkeletonBox height={14} width="65%" radius={4} />
+                      <SkeletonBox height={11} width="45%" radius={4} />
                     </div>
-                  </td>
-                </tr>
-              ))
-            ) : payslips.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="py-12 px-4 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <div className="w-10 h-10 rounded-xl bg-muted/70 text-muted-foreground flex items-center justify-center">
-                      <Icon icon={File01Icon} size={20} />
+                    <SkeletonBox height={20} width={70} radius={6} className="shrink-0" />
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 space-y-2">
+                    <div className="flex items-baseline justify-between">
+                      <SkeletonBox height={11} width={80} radius={3} />
+                      <SkeletonBox height={18} width={110} radius={4} />
                     </div>
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-semibold text-foreground">Belum Ada Slip Gaji</p>
-                      <p className="text-xs text-muted-foreground max-w-sm mx-auto font-normal">
-                        Belum ada slip gaji yang dipublikasikan oleh bagian HR untuk akun Anda.
-                      </p>
+                    <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border/40">
+                      <div className="space-y-1">
+                        <SkeletonBox height={9} width="60%" radius={3} />
+                        <SkeletonBox height={12} width="85%" radius={3} />
+                      </div>
+                      <div className="space-y-1">
+                        <SkeletonBox height={9} width="60%" radius={3} />
+                        <SkeletonBox height={12} width="85%" radius={3} />
+                      </div>
+                      <div className="space-y-1">
+                        <SkeletonBox height={9} width="60%" radius={3} />
+                        <SkeletonBox height={12} width="85%" radius={3} />
+                      </div>
                     </div>
                   </div>
-                </td>
-              </tr>
-            ) : (
-              paginatedPayslips.map((p) => (
-                <tr key={p.id} className="hover:bg-muted/40 transition-colors">
-                  <td className="py-2.5 px-3 text-xs font-normal text-primary">
-                    {p.payslip_number}
-                  </td>
-                  <td className="py-2.5 px-3 font-normal text-xs text-foreground">
-                    {p.period?.name || 'Periode Bulanan'}
-                  </td>
-                  <td className="py-2.5 px-3 text-xs font-normal text-muted-foreground">{formatRupiah(getBasicSalary(p))}</td>
-                  <td className="py-2.5 px-3 text-xs text-emerald-600 dark:text-emerald-400 font-normal">
-                    +{formatRupiah(getAllowancesAndOt(p))}
-                  </td>
-                  <td className="py-2.5 px-3 text-xs text-rose-600 dark:text-rose-400 font-normal">
-                    -{formatRupiah(getTotalDeductions(p))}
-                  </td>
-                  <td className="py-2.5 px-3 font-semibold text-foreground text-xs">
-                    {formatRupiah(getNetSalary(p))}
-                  </td>
-                  <td className="py-2.5 px-3 text-right space-x-1.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <SkeletonBox height={32} width="100%" radius={8} />
+                    <SkeletonBox height={32} width="100%" radius={8} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : payslips.length === 0 ? (
+          <div className="py-12 px-4 text-center">
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <div className="w-10 h-10 rounded-xl bg-muted/70 text-muted-foreground flex items-center justify-center">
+                <Icon icon={File01Icon} size={20} />
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-sm font-semibold text-foreground">Belum Ada Slip Gaji</p>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto font-normal">
+                  Belum ada slip gaji yang dipublikasikan oleh bagian HR untuk akun Anda.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left border-collapse table-fixed text-xs min-w-[760px]">
+                <colgroup>
+                  <col className="w-[18%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[10%]" />
+                </colgroup>
+                <thead>
+                  <tr className="bg-muted/40 border-b border-border/80 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2.5 px-3">No. Slip Gaji</th>
+                    <th className="py-2.5 px-3">Periode Payroll</th>
+                    <th className="py-2.5 px-3">Gaji Pokok</th>
+                    <th className="py-2.5 px-3">Tunjangan & Lembur</th>
+                    <th className="py-2.5 px-3">Potongan</th>
+                    <th className="py-2.5 px-3">Take Home Pay</th>
+                    <th className="py-2.5 px-3 text-right">Aksi Dokumen</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 bg-card text-xs">
+                  {paginatedPayslips.map((p) => (
+                    <tr key={p.id} className="hover:bg-muted/40 transition-colors">
+                      <td className="py-2.5 px-3 text-xs font-normal text-primary">
+                        {p.payslip_number}
+                      </td>
+                      <td className="py-2.5 px-3 font-normal text-xs text-foreground">
+                        {p.period?.name || 'Periode Bulanan'}
+                      </td>
+                      <td className="py-2.5 px-3 text-xs font-normal text-muted-foreground">{formatRupiah(getBasicSalary(p))}</td>
+                      <td className="py-2.5 px-3 text-xs text-emerald-600 dark:text-emerald-400 font-normal">
+                        +{formatRupiah(getAllowancesAndOt(p))}
+                      </td>
+                      <td className="py-2.5 px-3 text-xs text-rose-600 dark:text-rose-400 font-normal">
+                        -{formatRupiah(getTotalDeductions(p))}
+                      </td>
+                      <td className="py-2.5 px-3 font-semibold text-foreground text-xs">
+                        {formatRupiah(getNetSalary(p))}
+                      </td>
+                      <td className="py-2.5 px-3 text-right space-x-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedSlip(p)}
+                          className="px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 inline-flex items-center space-x-1 cursor-pointer"
+                        >
+                          <Icon icon={ViewIcon} size={14} />
+                          <span>Rincian</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadPdf(p)}
+                          disabled={isDownloading === p.id}
+                          className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 inline-flex items-center space-x-1 shadow-xs cursor-pointer disabled:opacity-50"
+                        >
+                          <Icon icon={Download01Icon} size={14} />
+                          <span>{isDownloading === p.id ? 'Mengunduh...' : 'PDF'}</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View */}
+            <div className="block sm:hidden divide-y divide-border">
+              {paginatedPayslips.map((p) => (
+                <div key={p.id} className="p-3.5 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-mono text-xs font-medium text-primary truncate">
+                        {p.payslip_number}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                        {p.period?.name || 'Periode Bulanan'}
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-medium shrink-0">
+                      <Icon icon={CheckmarkCircle01Icon} size={11} />
+                      <span>Sah HR</span>
+                    </span>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 space-y-2">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-[11px] text-muted-foreground uppercase font-medium">Take Home Pay</span>
+                      <span className="text-base font-bold text-foreground font-mono">
+                        {formatRupiah(getNetSalary(p))}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/50 text-[11px]">
+                      <div>
+                        <div className="text-[10px] text-muted-foreground uppercase font-medium">Pokok</div>
+                        <div className="font-medium text-foreground truncate mt-0.5">
+                          {formatRupiah(getBasicSalary(p))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-medium">Tunjangan</div>
+                        <div className="font-medium text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
+                          +{formatRupiah(getAllowancesAndOt(p))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-rose-600 dark:text-rose-400 uppercase font-medium">Potongan</div>
+                        <div className="font-medium text-rose-600 dark:text-rose-400 truncate mt-0.5">
+                          -{formatRupiah(getTotalDeductions(p))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setSelectedSlip(p)}
-                      className="px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 inline-flex items-center space-x-1"
+                      className="w-full py-1.5 px-3 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-muted/60 inline-flex items-center justify-center space-x-1.5 cursor-pointer"
                     >
                       <Icon icon={ViewIcon} size={14} />
                       <span>Rincian</span>
@@ -179,17 +322,17 @@ export const PayslipViewer: React.FC = () => {
                       type="button"
                       onClick={() => handleDownloadPdf(p)}
                       disabled={isDownloading === p.id}
-                      className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 inline-flex items-center space-x-1 shadow-xs"
+                      className="w-full py-1.5 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 inline-flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer disabled:opacity-50"
                     >
                       <Icon icon={Download01Icon} size={14} />
-                      <span>{isDownloading === p.id ? 'Mengunduh...' : 'PDF'}</span>
+                      <span>{isDownloading === p.id ? 'Mengunduh...' : 'Unduh PDF'}</span>
                     </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <Pagination

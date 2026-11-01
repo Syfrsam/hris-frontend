@@ -21,7 +21,7 @@ import { Pagination } from '../common/Pagination'
 import api, { employeeService } from '../../services/api'
 import { useToast } from '../../context/ToastContext'
 import type { Employee, Department, JobPosition } from '../../types'
-import { Skeleton } from '../ui/skeleton'
+import { SkeletonBox } from '../ui/skeleton'
 
 export const EmployeeManagement: React.FC = () => {
   const { toast } = useToast()
@@ -288,7 +288,7 @@ export const EmployeeManagement: React.FC = () => {
             }
             setShowAddModal(true)
           }}
-          className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-semibold rounded-lg shadow-xs transition-colors text-xs shrink-0 cursor-pointer active:scale-[0.98]"
+          className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-primary text-primary-foreground hover:bg-primary/90 font-medium rounded-lg shadow-xs transition-colors text-xs shrink-0 cursor-pointer active:scale-[0.98]"
         >
           <Icon icon={UserAdd01Icon} size={15} />
           <span>Tambah Karyawan</span>
@@ -339,22 +339,80 @@ export const EmployeeManagement: React.FC = () => {
 
       <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
         {loading ? (
-          <div className="p-4 space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center justify-between py-2.5 px-3 border-b border-border/40">
-                <div className="flex items-center space-x-3">
-                  <Skeleton className="w-8 h-8 rounded-lg" />
-                  <div className="space-y-1.5">
-                    <Skeleton className="w-32 h-3.5" />
-                    <Skeleton className="w-24 h-2.5" />
+          <div>
+            {/* Desktop Skullet Table Skeleton */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-sm text-foreground">
+                <thead className="bg-muted/40 text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider border-b border-border">
+                  <tr>
+                    <th className="py-2.5 px-4 w-[32%]">Karyawan</th>
+                    <th className="py-2.5 px-4 w-[24%]">Departemen & Jabatan</th>
+                    <th className="py-2.5 px-4 w-[18%]">Status Kepegawaian</th>
+                    <th className="py-2.5 px-4 w-[16%]">Gaji Pokok Basis</th>
+                    <th className="py-2.5 px-4 w-[10%] text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i} className="hover:bg-muted/20">
+                      <td className="py-2.5 px-4">
+                        <div className="flex items-center space-x-2.5">
+                          <SkeletonBox height={32} width={32} radius={8} className="shrink-0" />
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <SkeletonBox height={14} width="65%" radius={4} />
+                            <SkeletonBox height={10} width="45%" radius={3} />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <div className="space-y-1.5">
+                          <SkeletonBox height={14} width="60%" radius={4} />
+                          <SkeletonBox height={10} width="40%" radius={3} />
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={22} width={88} radius={6} />
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={14} width={96} radius={4} />
+                      </td>
+                      <td className="py-2.5 px-4 text-right">
+                        <SkeletonBox height={28} width={64} radius={8} className="ml-auto" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Skullet Cards Skeleton */}
+            <div className="block sm:hidden divide-y divide-border">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-3.5 space-y-3">
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-center space-x-2.5 flex-1 min-w-0">
+                      <SkeletonBox height={34} width={34} radius={8} className="shrink-0" />
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <SkeletonBox height={14} width="70%" radius={4} />
+                        <SkeletonBox height={10} width="50%" radius={3} />
+                      </div>
+                    </div>
+                    <SkeletonBox height={20} width={74} radius={6} className="shrink-0" />
                   </div>
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/40 border border-border/60">
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width="50%" radius={3} />
+                      <SkeletonBox height={13} width="80%" radius={4} />
+                    </div>
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width="50%" radius={3} />
+                      <SkeletonBox height={13} width="70%" radius={4} />
+                    </div>
+                  </div>
+                  <SkeletonBox height={30} width="100%" radius={8} />
                 </div>
-                <Skeleton className="w-32 h-3.5 hidden sm:block" />
-                <Skeleton className="w-20 h-5 rounded-md" />
-                <Skeleton className="w-24 h-3.5 hidden md:block" />
-                <Skeleton className="w-16 h-7 rounded-lg" />
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ) : filteredEmployees.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-1.5 font-normal">
@@ -368,15 +426,16 @@ export const EmployeeManagement: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-left text-sm text-foreground">
                 <thead className="bg-muted/40 text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider border-b border-border">
                   <tr>
-                    <th className="py-2.5 px-4">Karyawan</th>
-                    <th className="py-2.5 px-4">Departemen & Jabatan</th>
-                    <th className="py-2.5 px-4">Status Kepegawaian</th>
-                    <th className="py-2.5 px-4">Gaji Pokok Basis</th>
-                    <th className="py-2.5 px-4 text-right">Aksi</th>
+                    <th className="py-2.5 px-4 w-[32%]">Karyawan</th>
+                    <th className="py-2.5 px-4 w-[24%]">Departemen & Jabatan</th>
+                    <th className="py-2.5 px-4 w-[18%]">Status Kepegawaian</th>
+                    <th className="py-2.5 px-4 w-[16%]">Gaji Pokok Basis</th>
+                    <th className="py-2.5 px-4 w-[10%] text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -438,7 +497,7 @@ export const EmployeeManagement: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleOpenDetail(emp)}
-                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors border border-border"
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors border border-border cursor-pointer"
                           >
                             <Icon icon={EyeIcon} size={13} />
                             <span>Detail</span>
@@ -449,6 +508,74 @@ export const EmployeeManagement: React.FC = () => {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="block sm:hidden divide-y divide-border">
+              {paginatedEmployees.map((emp) => {
+                const statusBadge =
+                  emp.employment_status === 'permanent'
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
+                    : emp.employment_status === 'contract'
+                    ? 'bg-primary/10 text-primary border-primary/20'
+                    : emp.employment_status === 'probation'
+                    ? 'bg-secondary text-secondary-foreground border-secondary/40'
+                    : 'bg-muted text-muted-foreground border-border'
+
+                const statusLabel =
+                  emp.employment_status === 'permanent'
+                    ? 'Tetap (PKWTT)'
+                    : emp.employment_status === 'contract'
+                    ? 'Kontrak (PKWT)'
+                    : emp.employment_status === 'probation'
+                    ? 'Probation'
+                    : 'Magang'
+
+                return (
+                  <div key={emp.id} className="p-3.5 space-y-2.5 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center space-x-2.5 min-w-0">
+                        <Avatar src={emp.user?.avatar_url} name={emp.user?.name} size="sm" />
+                        <div className="min-w-0">
+                          <div className="font-medium text-foreground text-xs truncate">
+                            {emp.user?.name}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground truncate">
+                            NIK: {emp.nik}
+                          </div>
+                        </div>
+                      </div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-medium border shrink-0 ${statusBadge}`}>
+                        {statusLabel}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/30 border border-border/60 text-xs">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-normal">Jabatan & Dept</span>
+                        <span className="font-normal text-foreground text-[11px] truncate block">
+                          {emp.job_position?.title || 'Staff'} ({emp.department?.name || 'Dept'})
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-normal">Gaji Pokok</span>
+                        <span className="font-semibold text-foreground text-[11px] block">
+                          {formatRupiah(emp.active_contract?.basic_salary)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenDetail(emp)}
+                      className="w-full flex items-center justify-center space-x-1.5 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors border border-border cursor-pointer"
+                    >
+                      <Icon icon={EyeIcon} size={13} />
+                      <span>Lihat Detail Karyawan</span>
+                    </button>
+                  </div>
+                )
+              })}
             </div>
 
             <Pagination
@@ -660,7 +787,7 @@ export const EmployeeManagement: React.FC = () => {
                         type="button"
                         onClick={handleSaveBank}
                         disabled={isSavingBank}
-                        className="px-2.5 py-1 bg-primary text-primary-foreground text-[11px] font-medium rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="px-3 py-1 bg-primary text-primary-foreground text-[11px] font-medium rounded-md hover:bg-primary/90 shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
                       >
                         {isSavingBank ? 'Menyimpan...' : 'Simpan Rekening'}
                       </button>
@@ -1016,7 +1143,7 @@ export const EmployeeManagement: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs shadow-xs transition-colors disabled:opacity-50"
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   <Icon icon={CheckmarkCircle01Icon} size={15} />
                   <span>{isSubmitting ? 'Menyimpan...' : 'Simpan Karyawan'}</span>

@@ -19,7 +19,7 @@ import type { Attendance, Branch, Shift } from '../../types'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
-import { Skeleton } from '../ui/skeleton'
+import { SkeletonBox } from '../ui/skeleton'
 
 const DEFAULT_LAT = -6.225014
 const DEFAULT_LNG = 106.809657
@@ -728,7 +728,7 @@ export const AttendanceWidget: React.FC = () => {
           <div className="text-[11px] font-medium text-primary uppercase tracking-wide">Jadwal Shift</div>
           <div className="text-sm font-semibold text-foreground mt-1">
             {isLoading ? (
-              <Skeleton className="h-5 w-28" />
+              <SkeletonBox height={20} width={110} radius={4} />
             ) : (
               <>
                 {activeShift?.start_time ? activeShift.start_time.slice(0, 5) : '08:30'} -{' '}
@@ -737,7 +737,7 @@ export const AttendanceWidget: React.FC = () => {
             )}
           </div>
           {isLoading ? (
-            <Skeleton className="h-3.5 w-20 mt-1" />
+            <SkeletonBox height={13} width={80} radius={3} className="mt-1" />
           ) : activeShift?.name ? (
             <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{activeShift.name}</div>
           ) : null}
@@ -747,7 +747,7 @@ export const AttendanceWidget: React.FC = () => {
           <div className="text-[11px] font-medium text-foreground/80 uppercase tracking-wide">Toleransi</div>
           <div className="text-sm font-semibold text-foreground mt-1">
             {isLoading ? (
-              <Skeleton className="h-5 w-24" />
+              <SkeletonBox height={20} width={95} radius={4} />
             ) : (
               <>
                 {activeShift?.late_tolerance_minutes ?? 15} Menit
@@ -773,7 +773,7 @@ export const AttendanceWidget: React.FC = () => {
           <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Status Hari Ini</div>
           <div className="mt-1">
             {isLoading ? (
-              <Skeleton className="h-5 w-20" />
+              <SkeletonBox height={22} width={80} radius={6} />
             ) : hasClockedIn ? (
               <Badge variant={attendance?.status === 'late' ? 'warning' : 'success'} className="text-xs">
                 {attendance?.status === 'late'

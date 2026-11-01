@@ -129,7 +129,7 @@ export const OvertimeManagement: React.FC = () => {
             setFormError(null)
             setIsModalOpen(true)
           }}
-          className="h-8.5 px-3.5 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/90 font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-colors shrink-0 cursor-pointer active:scale-[0.98]"
+          className="h-8.5 px-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-xs flex items-center gap-1.5 shadow-xs transition-colors shrink-0 cursor-pointer active:scale-[0.98]"
         >
           <Icon icon={PlusSignIcon} size={15} />
           <span>Ajukan Lembur</span>
@@ -211,95 +211,189 @@ export const OvertimeManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Requests Table */}
-      <div className="my-4 overflow-x-auto rounded-xl border border-border/80 bg-card">
-        <table className="w-full text-left border-collapse table-fixed text-xs min-w-[840px]">
-          <colgroup>
-            <col className="w-[15%]" />
-            <col className="w-[14%]" />
-            <col className="w-[13%]" />
-            <col className="w-[8%]" />
-            <col className="w-[23%]" />
-            <col className="w-[18%]" />
-            <col className="w-[9%]" />
-          </colgroup>
-          <thead>
-            <tr className="bg-muted/40 border-b border-border/80 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              <th className="py-2.5 px-3">No. Pengajuan</th>
-              <th className="py-2.5 px-3">Tanggal Lembur</th>
-              <th className="py-2.5 px-3">Jam Lembur</th>
-              <th className="py-2.5 px-2 text-center">Durasi</th>
-              <th className="py-2.5 px-3">Deskripsi Pekerjaan</th>
-              <th className="py-2.5 px-3">Tahap Persetujuan</th>
-              <th className="py-2.5 px-3 text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/60 bg-card text-xs">
-            {isLoading ? (
-              [1, 2, 3, 4, 5].map((i) => (
-                <tr key={i} className="hover:bg-muted/20 transition-colors">
-                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="80%" radius={4} /></td>
-                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="75%" radius={4} /></td>
-                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="70%" radius={4} /></td>
-                  <td className="py-2.5 px-2.5 align-middle text-center"><SkeletonBox height={18} width={48} radius={999} className="mx-auto" /></td>
-                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="90%" radius={4} /></td>
-                  <td className="py-2.5 px-2.5 align-middle"><SkeletonBox height={14} width="75%" radius={4} /></td>
-                  <td className="py-2.5 px-3 align-middle text-center"><SkeletonBox height={20} width={64} radius={999} className="mx-auto" /></td>
-                </tr>
-              ))
-            ) : requests.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="py-12 px-4 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <div className="w-10 h-10 rounded-xl bg-muted/70 text-muted-foreground flex items-center justify-center">
-                      <Icon icon={Clock01Icon} size={20} />
+      {/* Requests Container (Desktop Table + Mobile Cards) */}
+      <div className="my-4 rounded-xl border border-border/80 bg-card overflow-hidden">
+        {isLoading ? (
+          <div>
+            {/* Desktop Table Skeleton */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left border-collapse table-fixed text-xs min-w-[840px]">
+                <colgroup>
+                  <col className="w-[15%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[23%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[9%]" />
+                </colgroup>
+                <thead>
+                  <tr className="bg-muted/40 border-b border-border/80 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2.5 px-3">No. Pengajuan</th>
+                    <th className="py-2.5 px-3">Tanggal Lembur</th>
+                    <th className="py-2.5 px-3">Jam Lembur</th>
+                    <th className="py-2.5 px-2 text-center">Durasi</th>
+                    <th className="py-2.5 px-3">Deskripsi Pekerjaan</th>
+                    <th className="py-2.5 px-3">Tahap Persetujuan</th>
+                    <th className="py-2.5 px-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 bg-card text-xs">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i} className="hover:bg-muted/20 transition-colors">
+                      <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="80%" radius={4} /></td>
+                      <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="75%" radius={4} /></td>
+                      <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="70%" radius={4} /></td>
+                      <td className="py-2.5 px-2.5 align-middle text-center"><SkeletonBox height={18} width={48} radius={999} className="mx-auto" /></td>
+                      <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="90%" radius={4} /></td>
+                      <td className="py-2.5 px-2.5 align-middle"><SkeletonBox height={14} width="75%" radius={4} /></td>
+                      <td className="py-2.5 px-3 align-middle text-center"><SkeletonBox height={20} width={64} radius={999} className="mx-auto" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards Skeleton */}
+            <div className="block sm:hidden divide-y divide-border">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-3.5 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <SkeletonBox height={14} width="60%" radius={4} />
+                      <SkeletonBox height={12} width="40%" radius={4} />
                     </div>
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-semibold text-foreground">Belum Ada Pengajuan Lembur</p>
-                      <p className="text-xs text-muted-foreground max-w-sm mx-auto font-normal">
-                        Pengajuan lembur yang telah Anda ajukan akan muncul di tabel ini beserta persetujuannya.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormError(null)
-                        setIsModalOpen(true)
-                      }}
-                      className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/90 text-xs font-semibold transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
-                    >
-                      <Icon icon={PlusSignIcon} size={14} />
-                      <span>Buat Pengajuan Lembur</span>
-                    </button>
+                    <SkeletonBox height={20} width={68} radius={6} className="shrink-0" />
                   </div>
-                </td>
-              </tr>
-            ) : (
-              paginatedRequests.map((r) => (
-                <tr key={r.id} className="hover:bg-muted/25 transition-colors">
-                  <td className="py-2.5 px-3 align-middle font-mono font-medium text-xs text-primary truncate" title={r.request_number}>
-                    {r.request_number}
-                  </td>
-                  <td className="py-2.5 px-3 align-middle font-normal text-xs text-foreground whitespace-nowrap">{r.date}</td>
-                  <td className="py-2.5 px-3 align-middle text-xs text-muted-foreground whitespace-nowrap">
-                    {r.start_time} - {r.end_time}
-                  </td>
-                  <td className="py-2.5 px-2.5 align-middle text-center">
-                    <span className="inline-block px-2 py-0.5 rounded-md bg-muted text-foreground font-medium text-[11px]">
-                      {r.duration_hours} jam
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 align-middle text-xs text-muted-foreground truncate" title={r.task_description}>
-                    {r.task_description}
-                  </td>
-                  <td className="py-2.5 px-2.5 align-middle text-xs whitespace-nowrap">
-                    <span className="text-muted-foreground font-normal">
-                      {r.current_step === 'manager' ? '1. Line Manager' : '2. HR Manager'}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 align-middle text-center whitespace-nowrap">
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/40 border border-border/60">
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width="50%" radius={3} />
+                      <SkeletonBox height={13} width="80%" radius={4} />
+                    </div>
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width="50%" radius={3} />
+                      <SkeletonBox height={13} width="70%" radius={4} />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <SkeletonBox height={10} width="35%" radius={3} />
+                    <SkeletonBox height={12} width="90%" radius={4} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="py-12 px-4 text-center">
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <div className="w-10 h-10 rounded-xl bg-muted/70 text-muted-foreground flex items-center justify-center">
+                <Icon icon={Clock01Icon} size={20} />
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-sm font-semibold text-foreground">Belum Ada Pengajuan Lembur</p>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto font-normal">
+                  Pengajuan lembur yang telah Anda ajukan akan muncul di sini beserta persetujuannya.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormError(null)
+                  setIsModalOpen(true)
+                }}
+                className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
+              >
+                <Icon icon={PlusSignIcon} size={14} />
+                <span>Buat Pengajuan Lembur</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left border-collapse table-fixed text-xs min-w-[840px]">
+                <colgroup>
+                  <col className="w-[15%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[23%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[9%]" />
+                </colgroup>
+                <thead>
+                  <tr className="bg-muted/40 border-b border-border/80 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2.5 px-3">No. Pengajuan</th>
+                    <th className="py-2.5 px-3">Tanggal Lembur</th>
+                    <th className="py-2.5 px-3">Jam Lembur</th>
+                    <th className="py-2.5 px-2 text-center">Durasi</th>
+                    <th className="py-2.5 px-3">Deskripsi Pekerjaan</th>
+                    <th className="py-2.5 px-3">Tahap Persetujuan</th>
+                    <th className="py-2.5 px-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 bg-card text-xs">
+                  {paginatedRequests.map((r) => (
+                    <tr key={r.id} className="hover:bg-muted/25 transition-colors">
+                      <td className="py-2.5 px-3 align-middle font-mono font-medium text-xs text-primary truncate" title={r.request_number}>
+                        {r.request_number}
+                      </td>
+                      <td className="py-2.5 px-3 align-middle font-normal text-xs text-foreground whitespace-nowrap">{r.date}</td>
+                      <td className="py-2.5 px-3 align-middle text-xs text-muted-foreground whitespace-nowrap">
+                        {r.start_time} - {r.end_time}
+                      </td>
+                      <td className="py-2.5 px-2.5 align-middle text-center">
+                        <span className="inline-block px-2 py-0.5 rounded-md bg-muted text-foreground font-medium text-[11px]">
+                          {r.duration_hours} jam
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 align-middle text-xs text-muted-foreground truncate" title={r.task_description}>
+                        {r.task_description}
+                      </td>
+                      <td className="py-2.5 px-2.5 align-middle text-xs whitespace-nowrap">
+                        <span className="text-muted-foreground font-normal">
+                          {r.current_step === 'manager' ? '1. Line Manager' : '2. HR Manager'}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 align-middle text-center whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-medium border ${
+                            r.status === 'approved'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
+                              : r.status === 'rejected'
+                              ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25'
+                              : 'bg-secondary text-secondary-foreground border-secondary/40'
+                          }`}
+                        >
+                          {r.status === 'approved'
+                            ? 'Disetujui'
+                            : r.status === 'rejected'
+                            ? 'Ditolak'
+                            : 'Menunggu'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View */}
+            <div className="block sm:hidden divide-y divide-border">
+              {paginatedRequests.map((r) => (
+                <div key={r.id} className="p-3.5 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-mono text-xs font-medium text-primary truncate">
+                        {r.request_number}
+                      </div>
+                      <div className="font-semibold text-xs text-foreground mt-0.5">
+                        {r.date}
+                      </div>
+                    </div>
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-medium border ${
+                      className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-medium border shrink-0 ${
                         r.status === 'approved'
                           ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
                           : r.status === 'rejected'
@@ -313,12 +407,38 @@ export const OvertimeManagement: React.FC = () => {
                         ? 'Ditolak'
                         : 'Menunggu'}
                     </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/40 border border-border/60 text-xs">
+                    <div>
+                      <div className="text-[10px] text-muted-foreground uppercase font-medium">Jam Lembur</div>
+                      <div className="text-xs text-foreground font-normal mt-0.5">
+                        {r.start_time} - {r.end_time}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-muted-foreground uppercase font-medium">Durasi & Tahap</div>
+                      <div className="text-xs text-foreground font-normal mt-0.5 flex items-center gap-1.5">
+                        <span className="font-semibold">{r.duration_hours} jam</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {r.current_step === 'manager' ? 'Line Mgr' : 'HR Mgr'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-xs">
+                    <div className="text-[10px] text-muted-foreground uppercase font-medium">Pekerjaan</div>
+                    <div className="text-xs text-muted-foreground font-normal mt-0.5 line-clamp-2">
+                      {r.task_description}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <Pagination
@@ -442,7 +562,7 @@ export const OvertimeManagement: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/90 font-semibold text-xs shadow-xs transition-colors disabled:opacity-50 cursor-pointer active:scale-[0.98]"
+                  className="flex-1 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs shadow-xs transition-colors disabled:opacity-50 cursor-pointer active:scale-[0.98]"
                 >
                   {isSubmitting ? 'Mengirim...' : 'Kirim Pengajuan'}
                 </button>

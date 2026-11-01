@@ -18,7 +18,8 @@ import { Card, CardTitle, CardDescription } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { Skeleton } from '../ui/skeleton'
+import { SkeletonBox } from '../ui/skeleton'
+import { Pagination } from '../common/Pagination'
 
 type QuickFilterKey = 'all' | 'active' | 'branch' | 'inactive'
 
@@ -47,9 +48,11 @@ export const ShiftSettings: React.FC = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  // Filters
+  // Filters & Pagination
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [activeFilterKey, setActiveFilterKey] = useState<QuickFilterKey>('all')
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [pageSize, setPageSize] = useState<number>(10)
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
@@ -74,13 +77,14 @@ export const ShiftSettings: React.FC = () => {
     is_active: true,
   })
 
-  const loadData = async () => {
-    setIsLoading(true)
+  const loadData = async (showSkeleton = true) => {
+    if (showSkeleton) setIsLoading(true)
     setFeedback(null)
     try {
       const [shiftRes, branchRes] = await Promise.all([
         shiftService.getShifts().catch(() => null),
         branchService.getBranches().catch(() => null),
+        showSkeleton ? new Promise((r) => setTimeout(r, 400)) : Promise.resolve(),
       ])
 
       if (shiftRes?.data?.success) {
@@ -95,7 +99,7 @@ export const ShiftSettings: React.FC = () => {
         message: err.response?.data?.message || 'Gagal memuat jadwal shift.',
       })
     } finally {
-      setIsLoading(false)
+      if (showSkeleton) setIsLoading(false)
     }
   }
 
@@ -242,6 +246,23 @@ export const ShiftSettings: React.FC = () => {
     })
   }, [shifts, searchQuery, activeFilterKey])
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, activeFilterKey])
+
+  const paginatedShifts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredShifts.slice(start, start + pageSize)
+  }, [filteredShifts, currentPage, pageSize])
+
+  const isFilterActive = searchQuery !== '' || activeFilterKey !== 'all'
+
+  const handleResetFilters = () => {
+    setSearchQuery('')
+    setActiveFilterKey('all')
+    setCurrentPage(1)
+  }
+
   const totalCount = shifts.length
   const activeCount = shifts.filter((s) => s.is_active !== false).length
   const branchCount = shifts.filter((s) => Boolean(s.branch_id)).length
@@ -264,7 +285,7 @@ export const ShiftSettings: React.FC = () => {
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
-              onClick={loadData}
+              onClick={() => loadData(true)}
               disabled={isLoading}
               className="h-8.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
               title="Segarkan data shift"
@@ -362,12 +383,22 @@ export const ShiftSettings: React.FC = () => {
                     {card.desc}
                   </p>
                 </div>
-                <span className="text-xl font-medium text-foreground tabular-nums tracking-tight">
-                  {isLoading ? '-' : card.count}
-                </span>
+                <div className="h-7 flex items-center">
+                  {isLoading ? (
+                    <SkeletonBox height={22} width={38} radius={6} />
+                  ) : (
+                    <span className="text-xl font-medium text-foreground tabular-nums tracking-tight">
+                      {card.count}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground font-normal">
-                <span>{isLoading ? '...' : card.subtitle}</span>
+                {isLoading ? (
+                  <SkeletonBox height={11} width={80} radius={4} />
+                ) : (
+                  <span>{card.subtitle}</span>
+                )}
                 <span className={isSelected ? 'text-primary font-medium' : 'text-muted-foreground/80'}>
                   {isSelected ? 'Aktif Terfilter' : 'Klik Filter'}
                 </span>
@@ -415,16 +446,128 @@ export const ShiftSettings: React.FC = () => {
                 </button>
               )}
             </div>
+
+            {isFilterActive && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="text-xs text-primary hover:text-primary gap-1 h-8 px-2 cursor-pointer rounded-xl font-normal"
+              >
+                <Icon icon={Cancel01Icon} size={12} />
+                <span>Reset</span>
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Content Body */}
         {isLoading ? (
-          <div className="p-4 space-y-3">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-xl" />
-            ))}
-          </div>
+          <>
+            {/* Desktop Table Skeleton (>= 640px) */}
+            <div className="hidden sm:block overflow-x-auto rounded-xl border border-border/80">
+              <table className="w-full text-left border-collapse table-fixed text-xs">
+                <colgroup>
+                  <col className="w-[28%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[9%]" />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-border/80 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="py-2.5 px-3">Nama Shift</th>
+                    <th className="py-2.5 px-3">Jam Masuk - Pulang</th>
+                    <th className="py-2.5 px-3">Toleransi Terlambat</th>
+                    <th className="py-2.5 px-3">Cabang Kantor</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">Status</th>
+                    <th className="py-2.5 px-3 text-right whitespace-nowrap">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 bg-card text-xs">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i} className="hover:bg-muted/20 transition-colors">
+                      {/* Nama Shift & Durasi */}
+                      <td className="py-2.5 px-3 align-middle overflow-hidden">
+                        <div className="space-y-1">
+                          <SkeletonBox height={14} width="72%" radius={4} />
+                          <SkeletonBox height={10} width="45%" radius={4} />
+                        </div>
+                      </td>
+
+                      {/* Jam Masuk - Pulang */}
+                      <td className="py-2.5 px-3 align-middle overflow-hidden">
+                        <SkeletonBox height={14} width="65%" radius={4} />
+                      </td>
+
+                      {/* Toleransi Terlambat */}
+                      <td className="py-2.5 px-3 align-middle overflow-hidden">
+                        <div className="space-y-1">
+                          <SkeletonBox height={14} width="55%" radius={4} />
+                          <SkeletonBox height={10} width="40%" radius={4} />
+                        </div>
+                      </td>
+
+                      {/* Cabang Kantor */}
+                      <td className="py-2.5 px-3 align-middle overflow-hidden">
+                        <SkeletonBox height={13} width="70%" radius={4} />
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-2.5 px-3 align-middle whitespace-nowrap">
+                        <SkeletonBox height={18} width={48} radius={999} />
+                      </td>
+
+                      {/* Aksi */}
+                      <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <SkeletonBox height={28} width={50} radius={8} />
+                          <SkeletonBox height={28} width={54} radius={8} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List Skeleton (< 640px) */}
+            <div className="block sm:hidden divide-y divide-border rounded-xl border border-border/80 overflow-hidden bg-card">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-3.5 space-y-2.5 bg-card">
+                  {/* Header: Shift Name & Branch + Status Badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <SkeletonBox height={14} width="65%" radius={4} />
+                      <SkeletonBox height={10} width="45%" radius={4} />
+                    </div>
+                    <SkeletonBox height={18} width={48} radius={999} className="shrink-0" />
+                  </div>
+
+                  {/* 2-Column Detail Grid */}
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl border border-border/60 bg-muted/20">
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width={50} radius={3} />
+                      <SkeletonBox height={13} width="80%" radius={3} />
+                      <SkeletonBox height={10} width="55%" radius={3} />
+                    </div>
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width={65} radius={3} />
+                      <SkeletonBox height={13} width="70%" radius={3} />
+                      <SkeletonBox height={10} width="60%" radius={3} />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons Footer */}
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <SkeletonBox height={32} width="100%" radius={8} className="flex-1" />
+                    <SkeletonBox height={32} width={60} radius={8} className="shrink-0" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         ) : filteredShifts.length === 0 ? (
           <div className="p-10 text-center space-y-2">
             <Icon icon={Clock01Icon} size={36} className="mx-auto text-muted-foreground/40" />
@@ -440,20 +583,28 @@ export const ShiftSettings: React.FC = () => {
         ) : (
           <>
             {/* Desktop Table View (>= 640px) */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="hidden sm:block overflow-x-auto rounded-xl border border-border/80">
+              <table className="w-full text-left border-collapse table-fixed text-xs">
+                <colgroup>
+                  <col className="w-[28%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[9%]" />
+                </colgroup>
                 <thead>
-                  <tr className="border-b border-border bg-muted/30 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <tr className="border-b border-border/80 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                     <th className="py-2.5 px-3">Nama Shift</th>
                     <th className="py-2.5 px-3">Jam Masuk - Pulang</th>
                     <th className="py-2.5 px-3">Toleransi Terlambat</th>
                     <th className="py-2.5 px-3">Cabang Kantor</th>
-                    <th className="py-2.5 px-3">Status</th>
-                    <th className="py-2.5 px-3 text-right">Aksi</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">Status</th>
+                    <th className="py-2.5 px-3 text-right whitespace-nowrap">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredShifts.map((shift) => {
+                <tbody className="divide-y divide-border/60 bg-card text-xs">
+                  {paginatedShifts.map((shift) => {
                     const start = shift.start_time ? shift.start_time.slice(0, 5) : '08:30'
                     const end = shift.end_time ? shift.end_time.slice(0, 5) : '17:30'
                     const tol = shift.late_tolerance_minutes ?? 15
@@ -462,29 +613,29 @@ export const ShiftSettings: React.FC = () => {
 
                     return (
                       <tr key={shift.id} className="hover:bg-muted/20 transition-colors">
-                        <td className="py-3 px-3">
-                          <div className="font-semibold text-foreground">{shift.name}</div>
+                        <td className="py-2.5 px-3 align-middle overflow-hidden">
+                          <div className="font-semibold text-foreground truncate">{shift.name}</div>
                           <div className="text-[10px] text-muted-foreground font-normal">
                             Durasi {duration}
                           </div>
                         </td>
-                        <td className="py-3 px-3">
+                        <td className="py-2.5 px-3 align-middle overflow-hidden">
                           <div className="font-medium text-foreground">
                             {start} - {end} <span className="text-[10px] text-muted-foreground">WIB</span>
                           </div>
                         </td>
-                        <td className="py-3 px-3">
+                        <td className="py-2.5 px-3 align-middle overflow-hidden">
                           <div className="font-medium text-foreground">{tol} Menit</div>
                           <div className="text-[10px] text-muted-foreground font-normal">
                             s/d {cutoff} WIB
                           </div>
                         </td>
-                        <td className="py-3 px-3 text-muted-foreground">
+                        <td className="py-2.5 px-3 align-middle text-muted-foreground truncate">
                           {shift.branch?.name || (
                             <span className="text-muted-foreground/70 font-normal">Semua Cabang</span>
                           )}
                         </td>
-                        <td className="py-3 px-3">
+                        <td className="py-2.5 px-3 align-middle whitespace-nowrap">
                           <Badge
                             variant={shift.is_active ? 'success' : 'secondary'}
                             className="text-[10px] px-2 py-0.2"
@@ -492,7 +643,7 @@ export const ShiftSettings: React.FC = () => {
                             {shift.is_active ? 'Aktif' : 'Nonaktif'}
                           </Badge>
                         </td>
-                        <td className="py-3 px-3 text-right">
+                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
                               variant="outline"
@@ -521,9 +672,9 @@ export const ShiftSettings: React.FC = () => {
               </table>
             </div>
 
-            {/* Mobile Card Reflow (< 640px) */}
-            <div className="block sm:hidden divide-y divide-border">
-              {filteredShifts.map((shift) => {
+            {/* Mobile Card List View (< 640px) */}
+            <div className="block sm:hidden divide-y divide-border rounded-xl border border-border/80 overflow-hidden bg-card">
+              {paginatedShifts.map((shift) => {
                 const start = shift.start_time ? shift.start_time.slice(0, 5) : '08:30'
                 const end = shift.end_time ? shift.end_time.slice(0, 5) : '17:30'
                 const tol = shift.late_tolerance_minutes ?? 15
@@ -531,11 +682,11 @@ export const ShiftSettings: React.FC = () => {
                 const duration = calculateDuration(start, end)
 
                 return (
-                  <div key={shift.id} className="py-3.5 space-y-2.5">
+                  <div key={shift.id} className="p-3.5 space-y-2.5 bg-card">
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="font-semibold text-foreground text-xs">{shift.name}</div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-foreground text-xs truncate">{shift.name}</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
                           {shift.branch?.name || 'Semua Cabang Kantor'}
                         </div>
                       </div>
@@ -547,18 +698,18 @@ export const ShiftSettings: React.FC = () => {
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-muted/30 p-2.5 rounded-xl border border-border">
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-muted/20 p-2.5 rounded-xl border border-border/60">
                       <div>
                         <div className="text-[10px] text-muted-foreground">Jam Kerja:</div>
-                        <div className="font-semibold text-foreground mt-0.5 text-xs">
+                        <div className="font-semibold text-foreground mt-0.5 text-xs truncate">
                           {start} - {end} WIB
                         </div>
-                        <div className="text-[10px] text-muted-foreground">Durasi {duration}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">Durasi {duration}</div>
                       </div>
                       <div>
                         <div className="text-[10px] text-muted-foreground">Toleransi Terlambat:</div>
-                        <div className="font-semibold text-foreground mt-0.5 text-xs">{tol} Menit</div>
-                        <div className="text-[10px] text-muted-foreground">s/d {cutoff} WIB</div>
+                        <div className="font-semibold text-foreground mt-0.5 text-xs truncate">{tol} Menit</div>
+                        <div className="text-[10px] text-muted-foreground truncate">s/d {cutoff} WIB</div>
                       </div>
                     </div>
 
@@ -576,7 +727,7 @@ export const ShiftSettings: React.FC = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => setDeleteTargetShift(shift)}
-                        className="h-8 px-2.5 text-xs rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 cursor-pointer font-medium"
+                        className="h-8 px-2.5 text-xs rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 cursor-pointer font-medium shrink-0"
                       >
                         <TrashIcon className="w-3.5 h-3.5" />
                         <span className="ml-1">Hapus</span>
@@ -586,6 +737,15 @@ export const ShiftSettings: React.FC = () => {
                 )
               })}
             </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredShifts.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[10, 25, 50]}
+            />
           </>
         )}
       </Card>
@@ -796,7 +956,7 @@ export const ShiftSettings: React.FC = () => {
                 form="shift-settings-form"
                 size="sm"
                 disabled={isSaving}
-                className="h-8 text-xs cursor-pointer bg-primary text-primary-foreground font-medium hover:bg-primary/90"
+                className="h-8 px-4 text-xs font-medium cursor-pointer rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs active:scale-[0.98]"
               >
                 {isSaving ? (
                   <>

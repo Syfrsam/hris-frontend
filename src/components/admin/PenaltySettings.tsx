@@ -666,7 +666,7 @@ export const PenaltySettings: React.FC = () => {
               <Button
                 type="submit"
                 disabled={isSaving}
-                className="w-full h-11 sm:h-10 rounded-xl font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-xs gap-2 text-xs cursor-pointer active:scale-[0.98]"
+                className="w-full h-11 sm:h-10 rounded-xl font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs gap-2 text-xs cursor-pointer active:scale-[0.98]"
               >
                 <Icon icon={isSaving ? RefreshIcon : FloppyDiskIcon} size={16} className={isSaving ? 'animate-spin' : ''} />
                 <span>{isSaving ? 'Menyimpan...' : 'Simpan Peraturan Denda'}</span>

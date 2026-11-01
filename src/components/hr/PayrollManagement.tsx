@@ -14,7 +14,7 @@ import api, { API_BASE_URL } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import type { PayrollPeriod, Payroll } from '../../types'
-import { Skeleton } from '../ui/skeleton'
+import { SkeletonBox } from '../ui/skeleton'
 
 export const PayrollManagement: React.FC = () => {
   const { user } = useAuth()
@@ -289,7 +289,7 @@ export const PayrollManagement: React.FC = () => {
             type="button"
             disabled={generating}
             onClick={handleGenerateDraft}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg text-xs shadow-xs transition-colors disabled:opacity-50"
+            className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-primary text-primary-foreground hover:bg-primary/90 font-medium rounded-lg text-xs shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
           >
             <Icon icon={Invoice01Icon} size={15} />
             <span>{generating ? 'Mengkalkulasi...' : '1-Click Generate Draf'}</span>
@@ -300,7 +300,7 @@ export const PayrollManagement: React.FC = () => {
               type="button"
               disabled={authorizing || payrolls.length === 0}
               onClick={handleAuthorizePeriod}
-              className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium rounded-lg text-xs shadow-xs transition-colors disabled:opacity-50 border border-secondary/40"
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-xs shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
             >
               <Icon icon={CheckmarkCircle01Icon} size={15} />
               <span>{authorizing ? 'Mengesahkan...' : 'Otorisasi & Publikasikan'}</span>
@@ -315,7 +315,7 @@ export const PayrollManagement: React.FC = () => {
             Karyawan Terproses
           </div>
           <div className="text-xl font-semibold text-foreground mt-1">
-            {summary.count}
+            {loading ? <SkeletonBox height={24} width={45} radius={6} /> : summary.count}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Slip gaji terhitung</div>
         </div>
@@ -325,7 +325,7 @@ export const PayrollManagement: React.FC = () => {
             Total Gaji Pokok
           </div>
           <div className="text-base font-semibold text-foreground mt-1">
-            {formatRupiah(summary.basicTotal)}
+            {loading ? <SkeletonBox height={20} width={120} radius={6} /> : formatRupiah(summary.basicTotal)}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Basis kontrak aktif</div>
         </div>
@@ -335,7 +335,7 @@ export const PayrollManagement: React.FC = () => {
             Total Potongan
           </div>
           <div className="text-base font-semibold text-rose-600 dark:text-rose-400 mt-1">
-            {formatRupiah(summary.deductionsTotal)}
+            {loading ? <SkeletonBox height={20} width={110} radius={6} /> : formatRupiah(summary.deductionsTotal)}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">BPJS, PPh 21 & Telat</div>
         </div>
@@ -345,7 +345,7 @@ export const PayrollManagement: React.FC = () => {
             Total Pengeluaran Net
           </div>
           <div className="text-base font-semibold text-primary mt-1">
-            {formatRupiah(summary.netTotal)}
+            {loading ? <SkeletonBox height={20} width={130} radius={6} /> : formatRupiah(summary.netTotal)}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Siap ditransfer</div>
         </div>
@@ -362,23 +362,97 @@ export const PayrollManagement: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="p-4 space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center justify-between py-2.5 px-3 border-b border-border/40">
-                <div className="space-y-1.5 w-1/4">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-20" />
+          <div>
+            {/* Desktop Skullet Table Skeleton */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-sm text-foreground">
+                <thead className="bg-muted/40 text-[11px] font-normal text-muted-foreground/80 uppercase tracking-wider border-b border-border">
+                  <tr>
+                    <th className="py-2.5 px-4 w-[20%]">Karyawan</th>
+                    <th className="py-2.5 px-4 w-[14%]">No Slip Gaji</th>
+                    <th className="py-2.5 px-4 w-[11%]">Gaji Pokok</th>
+                    <th className="py-2.5 px-4 w-[11%]">Tunjangan</th>
+                    <th className="py-2.5 px-4 w-[11%]">Upah Lembur</th>
+                    <th className="py-2.5 px-4 w-[11%]">Potongan</th>
+                    <th className="py-2.5 px-4 w-[12%]">Gaji Bersih (Net)</th>
+                    <th className="py-2.5 px-4 w-[10%] text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i} className="hover:bg-muted/20">
+                      <td className="py-2.5 px-4">
+                        <div className="space-y-1.5">
+                          <SkeletonBox height={14} width="75%" radius={4} />
+                          <SkeletonBox height={10} width="50%" radius={3} />
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={13} width={100} radius={4} />
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={13} width={85} radius={4} />
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={13} width={70} radius={4} />
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={13} width={70} radius={4} />
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={13} width={70} radius={4} />
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={14} width={90} radius={4} />
+                      </td>
+                      <td className="py-2.5 px-4 text-right">
+                        <div className="flex items-center justify-end space-x-1.5">
+                          <SkeletonBox height={28} width={48} radius={8} />
+                          <SkeletonBox height={28} width={48} radius={8} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Skullet Cards Skeleton */}
+            <div className="block sm:hidden divide-y divide-border">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-3.5 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <SkeletonBox height={14} width="70%" radius={4} />
+                      <SkeletonBox height={10} width="50%" radius={3} />
+                    </div>
+                    <SkeletonBox height={16} width={80} radius={4} className="shrink-0" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/40 border border-border/60">
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width="50%" radius={3} />
+                      <SkeletonBox height={12} width="75%" radius={4} />
+                    </div>
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width="50%" radius={3} />
+                      <SkeletonBox height={12} width="75%" radius={4} />
+                    </div>
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width="50%" radius={3} />
+                      <SkeletonBox height={12} width="75%" radius={4} />
+                    </div>
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width="50%" radius={3} />
+                      <SkeletonBox height={12} width="85%" radius={4} />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <SkeletonBox height={28} width="50%" radius={8} />
+                    <SkeletonBox height={28} width="50%" radius={8} />
+                  </div>
                 </div>
-                <Skeleton className="h-4 w-28 hidden sm:block" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-20 hidden md:block" />
-                <Skeleton className="h-4 w-24 font-semibold" />
-                <div className="flex items-center gap-1.5">
-                  <Skeleton className="h-7 w-14 rounded-lg" />
-                  <Skeleton className="h-7 w-14 rounded-lg" />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ) : periods.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-1.5 font-normal">
@@ -406,82 +480,160 @@ export const PayrollManagement: React.FC = () => {
               <span>Perhitungan Transparan: <strong className="text-foreground">Gaji Bersih (Net)</strong> = (Gaji Pokok + Tunjangan + Lembur) - Total Potongan (BPJS, PPh 21, Denda/Absensi)</span>
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Semua Potongan Otomatis Terpotong</span>
             </div>
-            <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-foreground">
-              <thead className="bg-muted/40 text-[11px] font-normal text-muted-foreground/80 uppercase tracking-wider border-b border-border">
-                <tr>
-                  <th className="py-2.5 px-4">Karyawan</th>
-                  <th className="py-2.5 px-4">No Slip Gaji</th>
-                  <th className="py-2.5 px-4">Gaji Pokok</th>
-                  <th className="py-2.5 px-4">Tunjangan</th>
-                  <th className="py-2.5 px-4">Upah Lembur</th>
-                  <th className="py-2.5 px-4">Potongan</th>
-                  <th className="py-2.5 px-4">Gaji Bersih (Net)</th>
-                  <th className="py-2.5 px-4 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {paginatedPayrolls.map((p) => {
-                  const basic = p.summary?.basic_salary ?? p.basic_salary ?? 0
-                  const allowances = p.summary?.total_allowances ?? p.total_allowances ?? 0
-                  const ot = p.summary?.total_overtime_pay ?? p.total_overtime_pay ?? 0
-                  const ded = p.summary?.total_deductions ?? p.total_deductions ?? 0
-                  const net = p.summary?.net_salary ?? p.net_salary ?? 0
 
-                  return (
-                    <tr key={p.id} className="hover:bg-muted/40 transition-colors">
-                      <td className="py-2.5 px-4">
-                        <div className="font-normal text-foreground text-xs">
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-sm text-foreground">
+                <thead className="bg-muted/40 text-[11px] font-normal text-muted-foreground/80 uppercase tracking-wider border-b border-border">
+                  <tr>
+                    <th className="py-2.5 px-4 w-[20%]">Karyawan</th>
+                    <th className="py-2.5 px-4 w-[14%]">No Slip Gaji</th>
+                    <th className="py-2.5 px-4 w-[11%]">Gaji Pokok</th>
+                    <th className="py-2.5 px-4 w-[11%]">Tunjangan</th>
+                    <th className="py-2.5 px-4 w-[11%]">Upah Lembur</th>
+                    <th className="py-2.5 px-4 w-[11%]">Potongan</th>
+                    <th className="py-2.5 px-4 w-[12%]">Gaji Bersih (Net)</th>
+                    <th className="py-2.5 px-4 w-[10%] text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedPayrolls.map((p) => {
+                    const basic = p.summary?.basic_salary ?? p.basic_salary ?? 0
+                    const allowances = p.summary?.total_allowances ?? p.total_allowances ?? 0
+                    const ot = p.summary?.total_overtime_pay ?? p.total_overtime_pay ?? 0
+                    const ded = p.summary?.total_deductions ?? p.total_deductions ?? 0
+                    const net = p.summary?.net_salary ?? p.net_salary ?? 0
+
+                    return (
+                      <tr key={p.id} className="hover:bg-muted/40 transition-colors">
+                        <td className="py-2.5 px-4">
+                          <div className="font-normal text-foreground text-xs">
+                            {(p.employee as any)?.name || p.employee?.user?.name || 'Karyawan'}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground font-normal">
+                            NIK: {(p.employee as any)?.nik || p.employee?.nik || '-'} • {typeof (p.employee as any)?.department === 'string' ? (p.employee as any).department : p.employee?.department?.name || 'Divisi'}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-4 text-xs font-normal text-primary font-mono">
+                          {p.payslip_number}
+                        </td>
+                        <td className="py-2.5 px-4 text-xs font-normal text-muted-foreground">
+                          {formatRupiah(basic)}
+                        </td>
+                        <td className="py-2.5 px-4 text-xs font-normal text-emerald-600 dark:text-emerald-400">
+                          +{formatRupiah(allowances)}
+                        </td>
+                        <td className="py-2.5 px-4 text-xs font-normal text-emerald-600 dark:text-emerald-400">
+                          +{formatRupiah(ot)}
+                        </td>
+                        <td className="py-2.5 px-4 text-xs font-normal text-rose-600 dark:text-rose-400">
+                          -{formatRupiah(ded)}
+                        </td>
+                        <td className="py-2.5 px-4 text-xs font-semibold text-foreground">
+                          {formatRupiah(net)}
+                        </td>
+                        <td className="py-2.5 px-4 text-right space-x-1.5 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => handleViewPdf(p.id)}
+                            title="Lihat / Cetak Slip PDF di tab baru"
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors border border-border cursor-pointer"
+                          >
+                            <Icon icon={EyeIcon} size={13} />
+                            <span>Lihat</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadPdf(p.id, p.payslip_number)}
+                            disabled={downloadingId === p.id}
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                          >
+                            <Icon icon={Download01Icon} size={13} className={downloadingId === p.id ? 'animate-spin' : ''} />
+                            <span>{downloadingId === p.id ? 'Mengunduh...' : 'PDF'}</span>
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="block sm:hidden divide-y divide-border">
+              {paginatedPayrolls.map((p) => {
+                const basic = p.summary?.basic_salary ?? p.basic_salary ?? 0
+                const allowances = p.summary?.total_allowances ?? p.total_allowances ?? 0
+                const ot = p.summary?.total_overtime_pay ?? p.total_overtime_pay ?? 0
+                const ded = p.summary?.total_deductions ?? p.total_deductions ?? 0
+                const net = p.summary?.net_salary ?? p.net_salary ?? 0
+
+                return (
+                  <div key={p.id} className="p-3.5 space-y-2.5 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-medium text-foreground text-xs truncate">
                           {(p.employee as any)?.name || p.employee?.user?.name || 'Karyawan'}
                         </div>
-                        <div className="text-[10px] text-muted-foreground font-normal">
+                        <div className="text-[10px] text-muted-foreground truncate">
                           NIK: {(p.employee as any)?.nik || p.employee?.nik || '-'} • {typeof (p.employee as any)?.department === 'string' ? (p.employee as any).department : p.employee?.department?.name || 'Divisi'}
                         </div>
-                      </td>
-                      <td className="py-2.5 px-4 text-xs font-normal text-primary">
+                      </div>
+                      <span className="text-[11px] font-mono text-primary font-medium shrink-0">
                         {p.payslip_number}
-                      </td>
-                      <td className="py-2.5 px-4 text-xs font-normal text-muted-foreground">
-                        {formatRupiah(basic)}
-                      </td>
-                      <td className="py-2.5 px-4 text-xs font-normal text-emerald-600 dark:text-emerald-400">
-                        +{formatRupiah(allowances)}
-                      </td>
-                      <td className="py-2.5 px-4 text-xs font-normal text-emerald-600 dark:text-emerald-400">
-                        +{formatRupiah(ot)}
-                      </td>
-                      <td className="py-2.5 px-4 text-xs font-normal text-rose-600 dark:text-rose-400">
-                        -{formatRupiah(ded)}
-                      </td>
-                      <td className="py-2.5 px-4 text-xs font-semibold text-foreground">
-                        {formatRupiah(net)}
-                      </td>
-                      <td className="py-2.5 px-4 text-right space-x-1.5 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleViewPdf(p.id)}
-                          title="Lihat / Cetak Slip PDF di tab baru"
-                          className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors border border-border cursor-pointer"
-                        >
-                          <Icon icon={EyeIcon} size={13} />
-                          <span>Lihat</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDownloadPdf(p.id, p.payslip_number)}
-                          disabled={downloadingId === p.id}
-                          className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-normal text-xs transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
-                        >
-                          <Icon icon={Download01Icon} size={13} className={downloadingId === p.id ? 'animate-spin' : ''} />
-                          <span>{downloadingId === p.id ? 'Mengunduh...' : 'PDF'}</span>
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/30 border border-border/60 text-xs">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-normal">Gaji Pokok</span>
+                        <span className="font-normal text-muted-foreground text-[11px] block">
+                          {formatRupiah(basic)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-normal">Tunjangan & Lembur</span>
+                        <span className="font-normal text-emerald-600 dark:text-emerald-400 text-[11px] block">
+                          +{formatRupiah(allowances + ot)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-normal">Total Potongan</span>
+                        <span className="font-normal text-rose-600 dark:text-rose-400 text-[11px] block">
+                          -{formatRupiah(ded)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-normal">Gaji Bersih (Net)</span>
+                        <span className="font-semibold text-foreground text-[11px] block">
+                          {formatRupiah(net)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => handleViewPdf(p.id)}
+                        className="flex-1 flex items-center justify-center space-x-1 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-normal text-xs transition-colors border border-border cursor-pointer"
+                      >
+                        <Icon icon={EyeIcon} size={13} />
+                        <span>Lihat</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadPdf(p.id, p.payslip_number)}
+                        disabled={downloadingId === p.id}
+                        className="flex-1 flex items-center justify-center space-x-1 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                      >
+                        <Icon icon={Download01Icon} size={13} className={downloadingId === p.id ? 'animate-spin' : ''} />
+                        <span>{downloadingId === p.id ? 'Mengunduh...' : 'Unduh PDF'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
 
           <Pagination
             currentPage={currentPage}
@@ -581,7 +733,7 @@ export const PayrollManagement: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs shadow-xs transition-colors"
+                  className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs shadow-xs transition-colors cursor-pointer"
                 >
                   Simpan Periode
                 </button>

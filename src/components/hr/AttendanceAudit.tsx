@@ -11,7 +11,7 @@ import { Icon } from '../common/Icon'
 import { Pagination } from '../common/Pagination'
 import api from '../../services/api'
 import type { Attendance, ClockDetails, PenaltySetting } from '../../types'
-import { Skeleton } from '../ui/skeleton'
+import { SkeletonBox } from '../ui/skeleton'
 
 export const AttendanceAudit: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -166,7 +166,7 @@ export const AttendanceAudit: React.FC = () => {
           <button
             type="button"
             onClick={() => fetchAnomalies(selectedDate)}
-            className="px-3.5 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 font-medium rounded-lg text-xs transition-colors shadow-xs shrink-0 text-center"
+            className="px-3.5 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 font-medium rounded-lg text-xs transition-colors shadow-xs shrink-0 text-center cursor-pointer"
           >
             Segarkan
           </button>
@@ -185,7 +185,7 @@ export const AttendanceAudit: React.FC = () => {
             Total Anomali
           </div>
           <div className="text-xl font-semibold text-foreground mt-1">
-            {summary.total}
+            {loading ? <SkeletonBox height={24} width={40} radius={6} /> : summary.total}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Kasus tercatat</div>
         </div>
@@ -196,7 +196,7 @@ export const AttendanceAudit: React.FC = () => {
             <span>Terlambat</span>
           </div>
           <div className="text-xl font-semibold text-foreground mt-1">
-            {summary.late}
+            {loading ? <SkeletonBox height={24} width={40} radius={6} /> : summary.late}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">&gt; 15 menit shift</div>
         </div>
@@ -206,7 +206,7 @@ export const AttendanceAudit: React.FC = () => {
             Tanpa Clock-Out
           </div>
           <div className="text-xl font-semibold text-foreground mt-1">
-            {summary.noClockOut}
+            {loading ? <SkeletonBox height={24} width={40} radius={6} /> : summary.noClockOut}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">Belum scan pulang</div>
         </div>
@@ -216,7 +216,11 @@ export const AttendanceAudit: React.FC = () => {
             Total Menit Telat
           </div>
           <div className="text-xl font-semibold text-foreground mt-1">
-            {summary.totalLateMinutes} <span className="text-xs font-normal text-muted-foreground">menit</span>
+            {loading ? (
+              <SkeletonBox height={24} width={64} radius={6} />
+            ) : (
+              <>{summary.totalLateMinutes} <span className="text-xs font-normal text-muted-foreground">menit</span></>
+            )}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 font-normal">
             {penaltySetting?.late_penalty_type === 'hourly_rate' && penaltySetting.is_active
@@ -246,24 +250,84 @@ export const AttendanceAudit: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="p-4 space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border/60 bg-muted/20">
-                <div className="space-y-1.5 w-1/3">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
+          <div>
+            {/* Desktop Skullet Table Skeleton */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-sm text-foreground">
+                <thead className="bg-muted/40 text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider border-b border-border">
+                  <tr>
+                    <th className="py-2.5 px-4 w-[28%]">Karyawan</th>
+                    <th className="py-2.5 px-4 w-[16%]">Shift Kerja</th>
+                    <th className="py-2.5 px-4 w-[13%]">Waktu Masuk</th>
+                    <th className="py-2.5 px-4 w-[15%]">Keterlambatan</th>
+                    <th className="py-2.5 px-4 w-[13%]">Radius GPS</th>
+                    <th className="py-2.5 px-4 w-[15%]">Konsekuensi Payroll</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i} className="hover:bg-muted/20">
+                      <td className="py-2.5 px-4">
+                        <div className="flex items-center space-x-2.5">
+                          <SkeletonBox height={28} width={28} radius={8} className="shrink-0" />
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <SkeletonBox height={14} width="70%" radius={4} />
+                            <SkeletonBox height={10} width="50%" radius={3} />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <div className="space-y-1.5">
+                          <SkeletonBox height={14} width="75%" radius={4} />
+                          <SkeletonBox height={10} width="50%" radius={3} />
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={14} width={50} radius={4} />
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={20} width={80} radius={6} />
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={14} width={65} radius={4} />
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <SkeletonBox height={20} width={110} radius={6} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Skullet Cards Skeleton */}
+            <div className="block sm:hidden divide-y divide-border">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-3.5 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center space-x-2.5 flex-1 min-w-0">
+                      <SkeletonBox height={30} width={30} radius={8} className="shrink-0" />
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <SkeletonBox height={14} width="70%" radius={4} />
+                        <SkeletonBox height={10} width="50%" radius={3} />
+                      </div>
+                    </div>
+                    <SkeletonBox height={20} width={75} radius={6} className="shrink-0" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/40 border border-border/60">
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width="50%" radius={3} />
+                      <SkeletonBox height={12} width="80%" radius={4} />
+                    </div>
+                    <div className="space-y-1">
+                      <SkeletonBox height={10} width="50%" radius={3} />
+                      <SkeletonBox height={12} width="70%" radius={4} />
+                    </div>
+                  </div>
+                  <SkeletonBox height={20} width="100%" radius={6} />
                 </div>
-                <div className="space-y-1.5 w-1/4">
-                  <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-                <div className="space-y-1.5 w-1/4">
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-3 w-3/4" />
-                </div>
-                <Skeleton className="h-6 w-24 rounded-md shrink-0" />
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-1.5 font-normal">
@@ -276,79 +340,134 @@ export const AttendanceAudit: React.FC = () => {
             </span>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-foreground min-w-[760px]">
-              <thead className="bg-muted/40 text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider border-b border-border">
-                <tr>
-                  <th className="py-2.5 px-4">Karyawan</th>
-                  <th className="py-2.5 px-4">Shift Kerja</th>
-                  <th className="py-2.5 px-4">Waktu Masuk</th>
-                  <th className="py-2.5 px-4">Keterlambatan</th>
-                  <th className="py-2.5 px-4">Radius GPS</th>
-                  <th className="py-2.5 px-4">Konsekuensi Payroll</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {paginatedList.map((item) => {
-                  const clockInStr = getClockTimeString(item.clock_in)
-                  const distance = getDistanceMeters(item.clock_in)
-                  const lateMinutes = item.late_minutes || 0
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-sm text-foreground">
+                <thead className="bg-muted/40 text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider border-b border-border">
+                  <tr>
+                    <th className="py-2.5 px-4 w-[28%]">Karyawan</th>
+                    <th className="py-2.5 px-4 w-[16%]">Shift Kerja</th>
+                    <th className="py-2.5 px-4 w-[13%]">Waktu Masuk</th>
+                    <th className="py-2.5 px-4 w-[15%]">Keterlambatan</th>
+                    <th className="py-2.5 px-4 w-[13%]">Radius GPS</th>
+                    <th className="py-2.5 px-4 w-[15%]">Konsekuensi Payroll</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedList.map((item) => {
+                    const clockInStr = getClockTimeString(item.clock_in)
+                    const distance = getDistanceMeters(item.clock_in)
+                    const lateMinutes = item.late_minutes || 0
 
-                  return (
-                    <tr key={item.id} className="hover:bg-muted/40 transition-colors">
-                      <td className="py-2.5 px-4">
-                        <div className="flex items-center space-x-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-medium text-xs flex items-center justify-center shrink-0 border border-primary/20">
-                            {((item as any).employee_name || item.employee?.user?.name || 'K').charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-normal text-foreground text-xs">
-                              {(item as any).employee_name || item.employee?.user?.name || 'Karyawan'}
+                    return (
+                      <tr key={item.id} className="hover:bg-muted/40 transition-colors">
+                        <td className="py-2.5 px-4">
+                          <div className="flex items-center space-x-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-medium text-xs flex items-center justify-center shrink-0 border border-primary/20">
+                              {((item as any).employee_name || item.employee?.user?.name || 'K').charAt(0).toUpperCase()}
                             </div>
-                            <div className="text-[10px] text-muted-foreground font-normal">
-                              NIK: {(item as any).nik || item.employee?.nik || '-'} • {(item.employee?.department?.name || 'Divisi')}
+                            <div>
+                              <div className="font-normal text-foreground text-xs">
+                                {(item as any).employee_name || item.employee?.user?.name || 'Karyawan'}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground font-normal">
+                                NIK: {(item as any).nik || item.employee?.nik || '-'} • {(item.employee?.department?.name || 'Divisi')}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-4">
-                        <div className="font-normal text-foreground text-xs">
-                          {item.shift?.name || 'Shift Reguler'}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground font-normal">
-                          {item.shift?.start_time} - {item.shift?.end_time}
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-4 font-normal text-foreground text-xs">
-                        {clockInStr}
-                      </td>
-                      <td className="py-2.5 px-4">
-                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-medium border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25">
-                          <Icon icon={AlertCircleIcon} size={12} />
-                          <span>+{lateMinutes} Menit</span>
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-4">
-                        {distance !== null ? (
-                          <span className={`inline-flex items-center space-x-1 text-xs font-normal ${
-                            distance <= 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                          }`}>
-                            <Icon icon={Location01Icon} size={12} />
-                            <span>{distance}m {distance <= 100 ? '(Aman)' : '(Luar Radius)'}</span>
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <div className="font-normal text-foreground text-xs">
+                            {item.shift?.name || 'Shift Reguler'}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground font-normal">
+                            {item.shift?.start_time} - {item.shift?.end_time}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-4 font-normal text-foreground text-xs">
+                          {clockInStr}
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-medium border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25">
+                            <Icon icon={AlertCircleIcon} size={12} />
+                            <span>+{lateMinutes} Menit</span>
                           </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground font-normal">-</span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-4">
-                        {renderPayrollConsequence(lateMinutes)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="py-2.5 px-4">
+                          {distance !== null ? (
+                            <span className={`inline-flex items-center space-x-1 text-xs font-normal ${
+                              distance <= 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                            }`}>
+                              <Icon icon={Location01Icon} size={12} />
+                              <span>{distance}m {distance <= 100 ? '(Aman)' : '(Luar)'}</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground font-normal">-</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-4">
+                          {renderPayrollConsequence(lateMinutes)}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="block sm:hidden divide-y divide-border">
+              {paginatedList.map((item) => {
+                const clockInStr = getClockTimeString(item.clock_in)
+                const distance = getDistanceMeters(item.clock_in)
+                const lateMinutes = item.late_minutes || 0
+
+                return (
+                  <div key={item.id} className="p-3.5 space-y-2.5 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center space-x-2.5 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-medium text-xs flex items-center justify-center shrink-0 border border-primary/20">
+                          {((item as any).employee_name || item.employee?.user?.name || 'K').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-foreground text-xs truncate">
+                            {(item as any).employee_name || item.employee?.user?.name || 'Karyawan'}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground truncate">
+                            NIK: {(item as any).nik || item.employee?.nik || '-'}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-medium border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25 shrink-0">
+                        <Icon icon={AlertCircleIcon} size={12} />
+                        <span>+{lateMinutes}m</span>
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/30 border border-border/60 text-xs">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-normal">Shift & Masuk</span>
+                        <span className="font-normal text-foreground text-[11px] block truncate">
+                          {item.shift?.name || 'Reguler'} ({clockInStr})
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-normal">Radius GPS</span>
+                        <span className="font-normal text-foreground text-[11px] block">
+                          {distance !== null ? `${distance}m ${distance <= 100 ? '(Aman)' : '(Luar)'}` : '-'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-0.5">
+                      {renderPayrollConsequence(lateMinutes)}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
         )}
 
         {filtered.length > 0 && (
