@@ -15,6 +15,7 @@ import { Sidebar, type TabKey } from './components/layout/Sidebar'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
+import { SkulletProvider } from 'skullet/react'
 
 const UserRoleManagement = lazy(() =>
   import('./components/admin/UserRoleManagement').then((m) => ({ default: m.UserRoleManagement }))
@@ -363,7 +364,9 @@ export function App() {
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
-          <MainDashboard />
+          <SkulletProvider reveal="smart" mode="system">
+            <MainDashboard />
+          </SkulletProvider>
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
