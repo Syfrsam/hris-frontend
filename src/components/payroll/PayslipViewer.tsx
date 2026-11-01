@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { Cancel01Icon, Download01Icon, ViewIcon } from '@hugeicons/core-free-icons'
+import { Cancel01Icon, Download01Icon, ViewIcon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
 import { Pagination } from '../common/Pagination'
 import { payrollService, API_BASE_URL } from '../../services/api'
@@ -185,8 +185,9 @@ export const PayslipViewer: React.FC = () => {
             </button>
 
             <div className="flex items-center space-x-2 mb-1">
-              <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-medium">
-                ✓ Sah & Otorisasi HR
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-medium">
+                <Icon icon={CheckmarkCircle01Icon} size={12} />
+                <span>Sah & Otorisasi HR</span>
               </span>
             </div>
             <h3 className="text-base font-semibold text-foreground">Rincian Slip Gaji Karyawan</h3>

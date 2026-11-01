@@ -58,11 +58,15 @@ const PenaltySettings = lazy(() =>
 const LeaveTypeSettings = lazy(() =>
   import('./components/admin/LeaveTypeSettings').then((m) => ({ default: m.LeaveTypeSettings }))
 )
+const ShiftSettings = lazy(() =>
+  import('./components/admin/ShiftSettings').then((m) => ({ default: m.ShiftSettings }))
+)
 
 export const TAB_ROUTES: Record<TabKey, string> = {
   'superadmin-users': '/kelola-user',
   'superadmin-penalties': '/peraturan-denda',
   'superadmin-leave-types': '/kelola-jenis-cuti',
+  'superadmin-shifts': '/jadwal-shift',
   'attendance': '/presensi',
   'leaves': '/cuti',
   'overtime': '/lembur',
@@ -92,6 +96,11 @@ export const ROUTE_TO_TAB: Record<string, TabKey> = {
   '/superadmin/jenis-cuti': 'superadmin-leave-types',
   '/superadmin-leave-types': 'superadmin-leave-types',
   '/jenis-cuti': 'superadmin-leave-types',
+
+  '/jadwal-shift': 'superadmin-shifts',
+  '/superadmin/shifts': 'superadmin-shifts',
+  '/superadmin-shifts': 'superadmin-shifts',
+  '/shifts': 'superadmin-shifts',
 
   '/presensi': 'attendance',
   '/attendance': 'attendance',
@@ -323,6 +332,14 @@ const MainDashboard: React.FC = () => {
               <Route path="/superadmin/jenis-cuti" element={<Navigate to="/kelola-jenis-cuti" replace />} />
               <Route path="/superadmin-leave-types" element={<Navigate to="/kelola-jenis-cuti" replace />} />
               <Route path="/jenis-cuti" element={<Navigate to="/kelola-jenis-cuti" replace />} />
+
+              <Route
+                path="/jadwal-shift"
+                element={isSuperadmin || isHr ? <ShiftSettings /> : <Navigate to="/presensi" replace />}
+              />
+              <Route path="/superadmin/shifts" element={<Navigate to="/jadwal-shift" replace />} />
+              <Route path="/superadmin-shifts" element={<Navigate to="/jadwal-shift" replace />} />
+              <Route path="/shifts" element={<Navigate to="/jadwal-shift" replace />} />
 
               {/* Account Settings (All users) */}
               <Route path="/pengaturan" element={<AccountSettings />} />

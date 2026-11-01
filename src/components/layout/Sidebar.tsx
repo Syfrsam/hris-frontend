@@ -26,6 +26,7 @@ export type TabKey =
   | 'superadmin-users'
   | 'superadmin-penalties'
   | 'superadmin-leave-types'
+  | 'superadmin-shifts'
   | 'attendance'
   | 'leaves'
   | 'overtime'
@@ -189,6 +190,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="flex items-center space-x-2.5">
                 <Icon icon={Calendar03Icon} size={16} />
                 <span>Kelola Jenis Cuti</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabClick('superadmin-shifts')}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] transition-all cursor-pointer ${
+                activeTab === 'superadmin-shifts'
+                  ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
+              }`}
+            >
+              <div className="flex items-center space-x-2.5">
+                <Icon icon={Clock01Icon} size={16} />
+                <span>Jadwal Shift & Jam Kerja</span>
               </div>
             </button>
           </nav>

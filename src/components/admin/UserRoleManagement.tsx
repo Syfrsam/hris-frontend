@@ -430,10 +430,6 @@ export const UserRoleManagement: React.FC = () => {
       <div className="bg-primary text-primary-foreground p-5 sm:p-6 rounded-2xl shadow-xs relative overflow-hidden">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="max-w-2xl">
-            <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-medium uppercase tracking-wider mb-2">
-              <Icon icon={SecurityCheckIcon} size={14} className="mr-1.5" />
-              Keamanan & Otorisasi Sistem
-            </Badge>
             <h2 className="text-base sm:text-xl font-semibold tracking-tight text-white">
               Kelola Pengguna & Hak Akses Role
             </h2>
@@ -898,11 +894,11 @@ export const UserRoleManagement: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-1">
+                    <div className="flex items-center justify-end gap-1.5 pt-1">
                       <button
                         type="button"
                         onClick={() => openEditModal(item)}
-                        className="h-7.5 px-3 text-xs font-normal gap-1 cursor-pointer rounded-lg border border-border hover:bg-muted flex-1 flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground"
+                        className="h-8.5 px-2.5 text-xs font-normal gap-1 cursor-pointer rounded-lg border border-border hover:bg-muted flex-1 flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground"
                       >
                         <Icon icon={Edit02Icon} size={13} />
                         <span>Kelola</span>
@@ -911,15 +907,25 @@ export const UserRoleManagement: React.FC = () => {
                         type="button"
                         disabled={isSelf || isBusy}
                         onClick={() => handleToggleActive(item)}
-                        className={`h-7.5 px-3 text-xs font-normal rounded-lg border transition-colors flex-1 flex items-center justify-center ${
+                        className={`h-8.5 px-2.5 text-xs font-normal rounded-lg border transition-colors flex-1 flex items-center justify-center ${
                           isSelf
                             ? 'opacity-40 cursor-not-allowed border-border/40 text-muted-foreground'
                             : item.is_active
-                            ? 'border-border text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer'
+                            ? 'border-border text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10 cursor-pointer'
                             : 'border-border text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/10 cursor-pointer'
                         }`}
                       >
                         <span>{item.is_active ? 'Nonaktifkan' : 'Aktifkan'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSelf || isBusy}
+                        onClick={() => setUserToDelete(item)}
+                        className="h-8.5 px-2.5 text-xs font-normal rounded-lg border border-border text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 hover:border-rose-300 transition-colors flex items-center justify-center gap-1 cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title={isSelf ? 'Anda tidak dapat menghapus akun Anda sendiri' : 'Hapus akun'}
+                      >
+                        <TrashIcon className="w-3.5 h-3.5" />
+                        <span>Hapus</span>
                       </button>
                     </div>
                   </div>
@@ -1273,8 +1279,9 @@ export const UserRoleManagement: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed">
-              ⚠️ Seluruh sesi login, token otentikasi, dan riwayat akses pengguna ini akan dihapus.
+            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed flex items-center gap-2 font-normal">
+              <Icon icon={Alert02Icon} size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>Seluruh sesi login, token otentikasi, dan riwayat akses pengguna ini akan dihapus.</span>
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-1">

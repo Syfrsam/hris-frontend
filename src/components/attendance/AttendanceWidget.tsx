@@ -14,8 +14,8 @@ import {
   RefreshIcon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
-import { attendanceService, branchService } from '../../services/api'
-import type { Attendance, Branch } from '../../types'
+import { attendanceService, branchService, shiftService } from '../../services/api'
+import type { Attendance, Branch, Shift } from '../../types'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
@@ -50,6 +50,7 @@ export const AttendanceWidget: React.FC = () => {
   const [currentDate, setCurrentDate] = useState<string>('')
   const [attendance, setAttendance] = useState<Attendance | null>(null)
   const [activeBranch, setActiveBranch] = useState<Branch | null>(null)
+  const [activeShift, setActiveShift] = useState<Shift | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [notes, setNotes] = useState<string>('')
@@ -145,13 +146,14 @@ export const AttendanceWidget: React.FC = () => {
     )
   }
 
-  // Load attendance & branch data
+  // Load attendance, branch & shift data
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const [todayRes, branchRes] = await Promise.all([
+      const [todayRes, branchRes, shiftRes] = await Promise.all([
         attendanceService.getToday().catch(() => null),
         branchService.getBranches().catch(() => null),
+        shiftService.getShifts().catch(() => null),
       ])
 
       if (todayRes?.data?.success) {
@@ -159,6 +161,10 @@ export const AttendanceWidget: React.FC = () => {
       }
       if (branchRes?.data?.success && branchRes.data.data.length > 0) {
         setActiveBranch(branchRes.data.data[0])
+      }
+      if (shiftRes?.data?.success && shiftRes.data.data?.length > 0) {
+        const found = shiftRes.data.data.find((s: Shift) => s.is_active) || shiftRes.data.data[0]
+        setActiveShift(found)
       }
     } finally {
       setIsLoading(false)
@@ -585,7 +591,7 @@ export const AttendanceWidget: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span className="text-[10px] font-semibold text-muted-foreground tracking-wider uppercase">
                 Waktu Sistem
               </span>
@@ -719,12 +725,33 @@ export const AttendanceWidget: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
         <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/15">
           <div className="text-[11px] font-medium text-primary uppercase tracking-wide">Jadwal Shift</div>
-          <div className="text-sm font-semibold text-foreground mt-1">08:30 - 17:30 WIB</div>
+          <div className="text-sm font-semibold text-foreground mt-1">
+            {activeShift?.start_time ? activeShift.start_time.slice(0, 5) : '08:30'} -{' '}
+            {activeShift?.end_time ? activeShift.end_time.slice(0, 5) : '17:30'} WIB
+          </div>
+          {activeShift?.name && (
+            <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{activeShift.name}</div>
+          )}
         </div>
 
         <div className="p-3.5 rounded-xl bg-secondary/25 border border-secondary/40">
           <div className="text-[11px] font-medium text-foreground/80 uppercase tracking-wide">Toleransi</div>
-          <div className="text-sm font-semibold text-foreground mt-1">15 Menit (s/d 08:45)</div>
+          <div className="text-sm font-semibold text-foreground mt-1">
+            {activeShift?.late_tolerance_minutes ?? 15} Menit
+            {(() => {
+              const start = activeShift?.start_time ? activeShift.start_time.slice(0, 5) : '08:30'
+              const tol = activeShift?.late_tolerance_minutes ?? 15
+              const parts = start.split(':')
+              const h = parseInt(parts[0], 10)
+              const m = parseInt(parts[1], 10)
+              if (isNaN(h) || isNaN(m)) return ''
+              const total = h * 60 + m + tol
+              const cutH = Math.floor(total / 60) % 24
+              const cutM = total % 60
+              return ` (s/d ${String(cutH).padStart(2, '0')}:${String(cutM).padStart(2, '0')})`
+            })()}
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">Batas Tepat Waktu</div>
         </div>
 
         <div className="p-3.5 rounded-xl bg-muted/60 border border-border">

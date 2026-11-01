@@ -78,6 +78,9 @@ export interface Shift {
   start_time: string
   end_time: string
   late_tolerance_minutes: number
+  branch_id?: number | null
+  branch?: Branch | null
+  is_active?: boolean
 }
 
 export interface ClockDetails {

@@ -56,7 +56,7 @@ export const LoginCard: React.FC = () => {
   }
 
   return (
-    <div className="h-screen h-[100dvh] w-full flex flex-col md:flex-row bg-card font-sans overflow-hidden">
+    <div className="min-h-screen min-h-[100dvh] w-full flex flex-col md:flex-row bg-card font-sans overflow-y-auto md:overflow-hidden">
       {/* Kolom Kiri: Hero Visual */}
       <div className="w-full md:w-1/2 h-20 sm:h-24 md:h-full relative bg-[#1358D0] overflow-hidden flex md:flex-col justify-between p-4 sm:p-6 md:p-12 lg:p-16 shrink-0">
         <img
@@ -80,11 +80,6 @@ export const LoginCard: React.FC = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-1 shrink-0">
-            <span className="w-3.5 h-1.5 rounded-full bg-[#FFF250]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
-            <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
-          </div>
         </div>
 
         {/* Tampilan Desktop Header */}
@@ -99,19 +94,13 @@ export const LoginCard: React.FC = () => {
           <p className="text-white/85 text-xs sm:text-sm font-normal mt-2 leading-relaxed">
             Presensi GPS, manajemen cuti, dan payroll dalam satu sistem terpadu.
           </p>
-
-          <div className="flex items-center space-x-1.5 mt-4">
-            <span className="w-5 h-1.5 rounded-full bg-[#FFF250]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
-            <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
-          </div>
         </div>
 
         <div className="hidden md:block relative z-10 h-28 sm:h-36 md:h-44 pointer-events-none" />
       </div>
 
       {/* Kolom Kanan: Form Login */}
-      <div className="flex-1 w-full md:w-1/2 md:h-full bg-card flex flex-col justify-center px-5 sm:px-10 md:px-12 lg:px-20 py-4 sm:py-6 overflow-hidden">
+      <div className="flex-1 w-full md:w-1/2 md:h-full bg-card flex flex-col justify-center px-5 sm:px-10 md:px-12 lg:px-20 py-4 sm:py-6 overflow-y-auto md:overflow-hidden">
         <div className="max-w-sm w-full mx-auto">
           <h1 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
             Masuk Akun

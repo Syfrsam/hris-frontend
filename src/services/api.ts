@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Branch } from '../types'
+import type { Branch, Shift } from '../types'
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
@@ -104,6 +104,14 @@ export const branchService = {
   createBranch: (data: Partial<Branch>) => api.post('/branches', data),
   updateBranch: (id: number, data: Partial<Branch>) => api.put(`/branches/${id}`, data),
   deleteBranch: (id: number) => api.delete(`/branches/${id}`),
+}
+
+export const shiftService = {
+  getShifts: () => api.get('/shifts'),
+  getShift: (id: number) => api.get(`/shifts/${id}`),
+  createShift: (data: Partial<Shift>) => api.post('/shifts', data),
+  updateShift: (id: number, data: Partial<Shift>) => api.put(`/shifts/${id}`, data),
+  deleteShift: (id: number) => api.delete(`/shifts/${id}`),
 }
 
 export const attendanceService = {

@@ -10,7 +10,6 @@ import {
   InformationCircleIcon,
   RefreshIcon,
   Search01Icon,
-  SecurityCheckIcon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
 import { Pagination } from '../common/Pagination'
@@ -253,10 +252,6 @@ export const LeaveTypeSettings: React.FC = () => {
       <div className="bg-primary text-primary-foreground p-5 sm:p-6 rounded-2xl shadow-xs relative overflow-hidden">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="max-w-2xl">
-            <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-medium uppercase tracking-wider mb-2">
-              <Icon icon={SecurityCheckIcon} size={14} className="mr-1.5" />
-              Kebijakan Perusahaan
-            </Badge>
             <h2 className="text-base sm:text-xl font-semibold tracking-tight text-white">
               Master Jenis Cuti & Izin
             </h2>

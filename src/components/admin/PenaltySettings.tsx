@@ -6,7 +6,6 @@ import {
   FloppyDiskIcon,
   InformationCircleIcon,
   RefreshIcon,
-  SecurityCheckIcon,
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
 import { Card, CardTitle, CardDescription } from '../ui/card'
@@ -206,11 +205,7 @@ export const PenaltySettings: React.FC = () => {
       {/* Header Banner */}
       <div className="bg-primary text-primary-foreground p-5 sm:p-6 rounded-2xl shadow-xs relative overflow-hidden">
         <div className="relative z-10 max-w-3xl">
-          <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-medium uppercase tracking-wider mb-2">
-            <Icon icon={SecurityCheckIcon} size={14} className="mr-1.5" />
-            Kebijakan Perusahaan
-          </Badge>
-          <h2 className="text-base sm:text-xl font-semibold tracking-tight">
+          <h2 className="text-base sm:text-xl font-semibold tracking-tight text-white">
             Peraturan Denda & Pemotongan
           </h2>
           <p className="text-primary-foreground/85 text-xs mt-1 font-normal leading-relaxed">
