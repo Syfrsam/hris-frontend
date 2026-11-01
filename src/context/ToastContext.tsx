@@ -52,7 +52,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast, toast }}>
       {children}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col space-y-3 max-w-sm w-full pointer-events-none">
+      <div className="fixed bottom-4 sm:bottom-6 inset-x-4 sm:inset-x-auto sm:right-6 sm:w-full max-w-sm mx-auto sm:mx-0 z-50 flex flex-col space-y-2.5 pointer-events-none">
         {toasts.map((t) => {
           const isSuccess = t.type === 'success'
           const isError = t.type === 'error'
@@ -89,7 +89,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return (
             <div
               key={t.id}
-              className={`pointer-events-auto p-3.5 rounded-xl border border-border bg-card/98 text-foreground shadow-lg shadow-black/5 backdrop-blur-md flex items-start space-x-3 transition-all duration-300 ${statusStyles.border}`}
+              className={`pointer-events-auto w-full p-3.5 rounded-xl border border-border bg-card/98 text-foreground shadow-lg shadow-black/5 backdrop-blur-md flex items-start space-x-3 transition-all duration-300 ${statusStyles.border}`}
             >
               <div className={`shrink-0 p-1 rounded-lg border flex items-center justify-center ${statusStyles.badge}`}>
                 <Icon icon={icon} size={16} />
