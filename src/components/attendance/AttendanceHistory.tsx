@@ -11,7 +11,7 @@ import { Pagination } from '../common/Pagination'
 import { attendanceService } from '../../services/api'
 import type { Attendance } from '../../types'
 import { Badge } from '../ui/badge'
-import { Skeleton } from '../ui/skeleton'
+import { SkeletonBox } from '../ui/skeleton'
 
 interface SummaryData {
   total_present?: number
@@ -125,36 +125,55 @@ export const AttendanceHistory: React.FC = () => {
       </div>
 
       {/* History Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <div className="my-4 overflow-x-auto rounded-xl border border-border/80 bg-card">
+        <table className="w-full text-left border-collapse table-fixed text-xs min-w-[740px]">
+          <colgroup>
+            <col className="w-[15%]" />
+            <col className="w-[13%]" />
+            <col className="w-[13%]" />
+            <col className="w-[12%]" />
+            <col className="w-[16%]" />
+            <col className="w-[16%]" />
+            <col className="w-[15%]" />
+          </colgroup>
           <thead>
-            <tr className="border-b border-border text-[11px] font-medium uppercase text-muted-foreground/80">
-              <th className="pb-2.5 px-3">Tanggal</th>
-              <th className="pb-2.5 px-3">Clock-In</th>
-              <th className="pb-2.5 px-3">Clock-Out</th>
-              <th className="pb-2.5 px-3">Bukti Foto</th>
-              <th className="pb-2.5 px-3">Status</th>
-              <th className="pb-2.5 px-3">Keterlambatan</th>
-              <th className="pb-2.5 px-3 text-right">Durasi Kerja</th>
+            <tr className="bg-muted/40 border-b border-border/80 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <th className="py-2.5 px-3">Tanggal</th>
+              <th className="py-2.5 px-3">Clock-In</th>
+              <th className="py-2.5 px-3">Clock-Out</th>
+              <th className="py-2.5 px-3">Bukti Foto</th>
+              <th className="py-2.5 px-3">Status</th>
+              <th className="py-2.5 px-3">Keterlambatan</th>
+              <th className="py-2.5 px-3 text-right">Durasi Kerja</th>
             </tr>
           </thead>
-          <tbody className="divide-y border-border">
+          <tbody className="divide-y divide-border/60 bg-card text-xs">
             {isLoading ? (
               [1, 2, 3, 4, 5].map((i) => (
-                <tr key={i}>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-16" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-16" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-6 w-6 rounded-md" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-5 w-20 rounded-md" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-20" /></td>
-                  <td className="py-3 px-3 text-right"><Skeleton className="h-4 w-14 ml-auto" /></td>
+                <tr key={i} className="hover:bg-muted/20 transition-colors">
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="75%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="60%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="60%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={28} width={28} radius={6} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={20} width={70} radius={999} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="65%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle text-right"><SkeletonBox height={14} width="50%" radius={4} className="ml-auto" /></td>
                 </tr>
               ))
             ) : safeList.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
-                  Tidak ada catatan presensi pada periode ini.
+                <td colSpan={7} className="py-12 px-4 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <div className="w-10 h-10 rounded-xl bg-muted/70 text-muted-foreground flex items-center justify-center">
+                      <Icon icon={Clock01Icon} size={20} />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold text-foreground">Tidak Ada Catatan Presensi</p>
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto font-normal">
+                        Catatan clock-in dan clock-out pada rentang periode ini belum tersedia.
+                      </p>
+                    </div>
+                  </div>
                 </td>
               </tr>
             ) : (

@@ -288,7 +288,7 @@ export const EmployeeManagement: React.FC = () => {
             }
             setShowAddModal(true)
           }}
-          className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg shadow-xs transition-colors text-xs shrink-0"
+          className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-semibold rounded-lg shadow-xs transition-colors text-xs shrink-0 cursor-pointer active:scale-[0.98]"
         >
           <Icon icon={UserAdd01Icon} size={15} />
           <span>Tambah Karyawan</span>

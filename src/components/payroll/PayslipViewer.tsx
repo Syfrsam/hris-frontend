@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { Cancel01Icon, Download01Icon, ViewIcon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons'
+import { Cancel01Icon, Download01Icon, ViewIcon, CheckmarkCircle01Icon, File01Icon } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
 import { Pagination } from '../common/Pagination'
 import { payrollService, API_BASE_URL } from '../../services/api'
 import type { Payroll } from '../../types'
-import { Skeleton } from '../ui/skeleton'
+import { SkeletonBox } from '../ui/skeleton'
 
 export const PayslipViewer: React.FC = () => {
   const [payslips, setPayslips] = useState<Payroll[]>([])
@@ -91,41 +91,60 @@ export const PayslipViewer: React.FC = () => {
       </div>
 
       {/* Payslips Table */}
-      <div className="overflow-x-auto mt-4">
-        <table className="w-full text-left text-sm">
+      <div className="my-4 overflow-x-auto rounded-xl border border-border/80 bg-card">
+        <table className="w-full text-left border-collapse table-fixed text-xs min-w-[760px]">
+          <colgroup>
+            <col className="w-[18%]" />
+            <col className="w-[16%]" />
+            <col className="w-[14%]" />
+            <col className="w-[15%]" />
+            <col className="w-[13%]" />
+            <col className="w-[14%]" />
+            <col className="w-[10%]" />
+          </colgroup>
           <thead>
-            <tr className="border-b border-border text-[11px] font-medium uppercase text-muted-foreground/80">
-              <th className="pb-2.5 px-3">No. Slip Gaji</th>
-              <th className="pb-2.5 px-3">Periode Payroll</th>
-              <th className="pb-2.5 px-3">Gaji Pokok</th>
-              <th className="pb-2.5 px-3">Tunjangan & Lembur</th>
-              <th className="pb-2.5 px-3">Potongan</th>
-              <th className="pb-2.5 px-3">Take Home Pay</th>
-              <th className="pb-2.5 px-3 text-right">Aksi Dokumen</th>
+            <tr className="bg-muted/40 border-b border-border/80 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <th className="py-2.5 px-3">No. Slip Gaji</th>
+              <th className="py-2.5 px-3">Periode Payroll</th>
+              <th className="py-2.5 px-3">Gaji Pokok</th>
+              <th className="py-2.5 px-3">Tunjangan & Lembur</th>
+              <th className="py-2.5 px-3">Potongan</th>
+              <th className="py-2.5 px-3">Take Home Pay</th>
+              <th className="py-2.5 px-3 text-right">Aksi Dokumen</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-border/60 bg-card text-xs">
             {isLoading ? (
               [1, 2, 3, 4].map((i) => (
-                <tr key={i}>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-28" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-32" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-20" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-20" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
-                  <td className="py-3 px-3 text-right">
+                <tr key={i} className="hover:bg-muted/20 transition-colors">
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="80%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="75%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="65%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="60%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="60%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="70%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      <Skeleton className="h-7 w-16 rounded-lg" />
-                      <Skeleton className="h-7 w-16 rounded-lg" />
+                      <SkeletonBox height={28} width={32} radius={6} />
+                      <SkeletonBox height={28} width={32} radius={6} />
                     </div>
                   </td>
                 </tr>
               ))
             ) : payslips.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground font-normal">
-                  Belum ada slip gaji yang dipublikasikan untuk akun ini.
+                <td colSpan={7} className="py-12 px-4 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <div className="w-10 h-10 rounded-xl bg-muted/70 text-muted-foreground flex items-center justify-center">
+                      <Icon icon={File01Icon} size={20} />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold text-foreground">Belum Ada Slip Gaji</p>
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto font-normal">
+                        Belum ada slip gaji yang dipublikasikan oleh bagian HR untuk akun Anda.
+                      </p>
+                    </div>
+                  </div>
                 </td>
               </tr>
             ) : (

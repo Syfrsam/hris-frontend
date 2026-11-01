@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import {
   AlertCircleIcon,
+  Calendar03Icon,
   Cancel01Icon,
   CheckmarkCircle01Icon,
   File01Icon,
@@ -8,7 +9,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import { Icon } from '../common/Icon'
 import { Pagination } from '../common/Pagination'
-import { Skeleton } from '../ui/skeleton'
+import { SkeletonBox } from '../ui/skeleton'
 import { leaveService } from '../../services/api'
 import type { LeaveBalance, LeaveRequest, LeaveType } from '../../types'
 
@@ -166,7 +167,7 @@ export const LeaveManagement: React.FC = () => {
               loadLeaveTypes()
               setIsModalOpen(true)
             }}
-            className="px-3.5 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs flex items-center space-x-1.5 shadow-xs transition-colors shrink-0 cursor-pointer"
+            className="h-8.5 px-3.5 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/90 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors shrink-0 cursor-pointer active:scale-[0.98]"
           >
             <Icon icon={PlusSignIcon} size={15} />
             <span>Ajukan Cuti</span>
@@ -213,75 +214,113 @@ export const LeaveManagement: React.FC = () => {
       )}
 
       {/* Requests Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <div className="my-4 overflow-x-auto rounded-xl border border-border/80 bg-card">
+        <table className="w-full text-left border-collapse table-fixed text-xs min-w-[880px]">
+          <colgroup>
+            <col className="w-[14%]" />
+            <col className="w-[13%]" />
+            <col className="w-[16%]" />
+            <col className="w-[8%]" />
+            <col className="w-[12%]" />
+            <col className="w-[14%]" />
+            <col className="w-[15%]" />
+            <col className="w-[8%]" />
+          </colgroup>
           <thead>
-            <tr className="border-b border-border text-[11px] font-medium uppercase text-muted-foreground/80">
-              <th className="pb-2.5 px-3">No. Pengajuan</th>
-              <th className="pb-2.5 px-3">Jenis Cuti</th>
-              <th className="pb-2.5 px-3">Rentang Tanggal</th>
-              <th className="pb-2.5 px-3">Durasi</th>
-              <th className="pb-2.5 px-3">Bukti / Lampiran</th>
-              <th className="pb-2.5 px-3">Alasan</th>
-              <th className="pb-2.5 px-3">Tahap Persetujuan</th>
-              <th className="pb-2.5 px-3">Status</th>
+            <tr className="bg-muted/40 border-b border-border/80 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <th className="py-2.5 px-3">No. Pengajuan</th>
+              <th className="py-2.5 px-3">Jenis Cuti</th>
+              <th className="py-2.5 px-3">Rentang Tanggal</th>
+              <th className="py-2.5 px-2 text-center">Durasi</th>
+              <th className="py-2.5 px-3">Bukti / Lampiran</th>
+              <th className="py-2.5 px-3">Alasan</th>
+              <th className="py-2.5 px-3">Tahap Persetujuan</th>
+              <th className="py-2.5 px-3 text-center">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-border/60 bg-card text-xs">
             {isLoading ? (
               [1, 2, 3, 4, 5].map((i) => (
-                <tr key={i}>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-28" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-36" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-16" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-16" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-32" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
-                  <td className="py-3 px-3"><Skeleton className="h-5 w-16 rounded-md" /></td>
+                <tr key={i} className="hover:bg-muted/20 transition-colors">
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="80%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="70%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="85%" radius={4} /></td>
+                  <td className="py-2.5 px-2.5 align-middle text-center"><SkeletonBox height={18} width={48} radius={999} className="mx-auto" /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="60%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle"><SkeletonBox height={14} width="90%" radius={4} /></td>
+                  <td className="py-2.5 px-2.5 align-middle"><SkeletonBox height={14} width="75%" radius={4} /></td>
+                  <td className="py-2.5 px-3 align-middle text-center"><SkeletonBox height={20} width={64} radius={999} className="mx-auto" /></td>
                 </tr>
               ))
             ) : requests.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-6 text-center text-xs text-muted-foreground font-normal">
-                  Belum ada riwayat permohonan cuti.
+                <td colSpan={8} className="py-12 px-4 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <div className="w-10 h-10 rounded-xl bg-muted/70 text-muted-foreground flex items-center justify-center">
+                      <Icon icon={Calendar03Icon} size={20} />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold text-foreground">Belum Ada Riwayat Cuti</p>
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto font-normal">
+                        Pengajuan cuti yang telah Anda submit akan tampil di tabel ini beserta alur persetujuannya.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormError(null)
+                        loadLeaveTypes()
+                        setIsModalOpen(true)
+                      }}
+                      className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/90 text-xs font-semibold transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
+                    >
+                      <Icon icon={PlusSignIcon} size={14} />
+                      <span>Buat Pengajuan Cuti</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ) : (
               paginatedRequests.map((r) => (
-                <tr key={r.id} className="hover:bg-muted/40 transition-colors">
-                  <td className="py-2.5 px-3 text-xs font-normal text-primary">
+                <tr key={r.id} className="hover:bg-muted/25 transition-colors">
+                  <td className="py-2.5 px-3 align-middle font-mono font-medium text-xs text-primary truncate" title={r.request_number}>
                     {r.request_number}
                   </td>
-                  <td className="py-2.5 px-3 font-normal text-xs text-foreground">
+                  <td className="py-2.5 px-3 align-middle font-medium text-xs text-foreground truncate" title={r.leave_type?.name || 'Cuti'}>
                     {r.leave_type?.name || 'Cuti'}
                   </td>
-                  <td className="py-2.5 px-3 text-xs font-normal text-foreground">
+                  <td className="py-2.5 px-3 align-middle text-xs text-muted-foreground whitespace-nowrap">
                     {r.start_date} s/d {r.end_date}
                   </td>
-                  <td className="py-2.5 px-3 text-xs font-normal text-foreground">{r.total_days} Hari</td>
-                  <td className="py-2.5 px-3 text-xs font-normal">
+                  <td className="py-2.5 px-2.5 align-middle text-center">
+                    <span className="inline-block px-2 py-0.5 rounded-md bg-muted text-foreground font-medium text-[11px]">
+                      {r.total_days} Hari
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 align-middle text-xs">
                     {r.attachment_url ? (
                       <a
                         href={r.attachment_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center space-x-1 text-primary hover:underline text-xs"
+                        className="inline-flex items-center space-x-1 text-primary hover:underline text-xs font-medium"
                       >
-                        <Icon icon={File01Icon} size={14} />
+                        <Icon icon={File01Icon} size={13} />
                         <span>Lihat Dokumen</span>
                       </a>
                     ) : (
                       <span className="text-muted-foreground text-xs">-</span>
                     )}
                   </td>
-                  <td className="py-2.5 px-3 text-xs text-muted-foreground max-w-xs truncate font-normal">{r.reason}</td>
-                  <td className="py-2.5 px-3 text-xs font-normal">
-                    <span className="text-muted-foreground">
+                  <td className="py-2.5 px-3 align-middle text-xs text-muted-foreground truncate" title={r.reason}>
+                    {r.reason}
+                  </td>
+                  <td className="py-2.5 px-2.5 align-middle text-xs whitespace-nowrap">
+                    <span className="text-muted-foreground font-normal">
                       {r.current_step === 'manager' ? '1. Line Manager' : '2. HR Manager'}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3">
+                  <td className="py-2.5 px-3 align-middle text-center whitespace-nowrap">
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-medium border ${
                         r.status === 'approved'
@@ -459,7 +498,7 @@ export const LeaveManagement: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                  className="flex-1 py-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/90 font-semibold text-xs shadow-xs transition-colors disabled:opacity-50 cursor-pointer active:scale-[0.98]"
                 >
                   {isSubmitting ? 'Mengirim...' : 'Kirim Pengajuan'}
                 </button>

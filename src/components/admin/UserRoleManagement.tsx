@@ -461,7 +461,7 @@ export const UserRoleManagement: React.FC = () => {
             <button
               type="button"
               onClick={openCreateModal}
-              className="h-8.5 px-3.5 rounded-xl bg-white text-primary hover:bg-white/95 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              className="h-8.5 px-3.5 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/90 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
             >
               <Icon icon={Add01Icon} size={14} />
               <span>Tambah Akun Baru</span>
