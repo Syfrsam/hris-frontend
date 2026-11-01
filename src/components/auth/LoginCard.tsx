@@ -56,7 +56,7 @@ export const LoginCard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] w-full flex flex-col md:flex-row bg-card font-sans overflow-y-auto md:overflow-hidden">
+    <div className="h-screen h-[100dvh] w-full flex flex-col md:flex-row bg-card font-sans overflow-hidden">
       {/* Kolom Kiri: Hero Visual */}
       <div className="w-full md:w-1/2 h-20 sm:h-24 md:h-full relative bg-[#1358D0] overflow-hidden flex md:flex-col justify-between p-4 sm:p-6 md:p-12 lg:p-16 shrink-0">
         <img
