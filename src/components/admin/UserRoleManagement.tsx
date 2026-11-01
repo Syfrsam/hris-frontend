@@ -369,8 +369,8 @@ export const UserRoleManagement: React.FC = () => {
         ? (Object.values(validationErrors).flat()[0] as string)
         : null
       const finalMsg = firstValidationMsg || err.response?.data?.message || 'Gagal menyimpan data akun pengguna.'
-      setFeedback({ type: 'error', text: finalMsg })
-      toast.error('Validasi Gagal', finalMsg)
+      const isValidation = err.response?.status === 422
+      toast.error(isValidation ? 'Validasi Gagal' : 'Gagal Menyimpan Akun', finalMsg)
     } finally {
       setIsSubmitting(false)
     }

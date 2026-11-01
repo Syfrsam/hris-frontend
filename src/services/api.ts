@@ -84,15 +84,10 @@ export const authService = {
     api.post('/auth/login', credentials),
   getMe: () => api.get('/auth/me'),
   logout: () => api.post('/auth/logout'),
-  updateAvatar: (formData: FormData) =>
-    api.post('/auth/avatar', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  updateAvatar: (formData: FormData) => api.post('/auth/avatar', formData),
   updateProfile: (data: FormData | { name: string; email: string; phone?: string }) => {
     if (data instanceof FormData) {
-      return api.post('/auth/profile', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      return api.post('/auth/profile', data)
     }
     return api.put('/auth/profile', data)
   },
@@ -180,16 +175,11 @@ export const employeeService = {
   getNextNik: () => api.get('/employees/next-nik'),
   getEmployees: (query?: string) => api.get(`/employees${query ? `?${query}` : ''}`),
   getEmployee: (id: number) => api.get(`/employees/${id}`),
-  createEmployee: (data: FormData | Record<string, any>) =>
-    api.post('/employees', data, {
-      headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
-    }),
+  createEmployee: (data: FormData | Record<string, any>) => api.post('/employees', data),
   updateEmployee: (id: number, data: FormData | Record<string, any>) => {
     if (data instanceof FormData) {
       if (!data.has('_method')) data.append('_method', 'PUT')
-      return api.post(`/employees/${id}`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      return api.post(`/employees/${id}`, data)
     }
     return api.put(`/employees/${id}`, data)
   },
@@ -205,10 +195,7 @@ export const userService = {
     password: string
     role: string
     is_active?: boolean
-  }) =>
-    api.post('/users', data, {
-      headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
-    }),
+  }) => api.post('/users', data),
   updateUser: (
     id: number,
     data: FormData | {
@@ -222,12 +209,11 @@ export const userService = {
   ) => {
     if (data instanceof FormData) {
       if (!data.has('_method')) data.append('_method', 'PUT')
-      return api.post(`/users/${id}`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      return api.post(`/users/${id}`, data)
     }
     return api.put(`/users/${id}`, data)
   },
+  deleteUser: (id: number) => api.delete(`/users/${id}`),
 }
 
 export const penaltyService = {
