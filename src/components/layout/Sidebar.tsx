@@ -129,18 +129,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navigate = useNavigate()
 
-  const handleConfirmLogout = async () => {
+  const handleConfirmLogout = () => {
     setShowLogoutConfirm(false)
     if (onClose) onClose()
+    logout()
     navigate('/login', { replace: true })
-    try {
-      await logout()
-    } finally {
-      toast.success(
-        'Berhasil Keluar',
-        'Anda telah berhasil keluar dari akun HRIS Enterprise.'
-      )
-    }
+    toast.success(
+      'Berhasil Keluar',
+      'Anda telah berhasil keluar dari akun HRIS Enterprise.'
+    )
   }
 
   const renderMenuItems = () => (

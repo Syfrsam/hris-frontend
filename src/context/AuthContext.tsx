@@ -79,16 +79,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const logout = async () => {
-    try {
-      if (token) await authService.logout()
-    } catch {
-      // ignore
-    } finally {
-      clearApiCache()
-      setUser(null)
-      setToken(null)
-      localStorage.removeItem('hris_token')
-      localStorage.removeItem('hris_user')
+    const activeToken = token
+    clearApiCache()
+    setUser(null)
+    setToken(null)
+    localStorage.removeItem('hris_token')
+    localStorage.removeItem('hris_user')
+
+    if (activeToken) {
+      try {
+        await authService.logout()
+      } catch {
+        // ignore
+      }
     }
   }
 
