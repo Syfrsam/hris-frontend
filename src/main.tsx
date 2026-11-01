@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { SkulletProvider } from 'skullet/react'
+import 'skullet/styles.css'
 import './index.css'
 import App from './App.tsx'
 

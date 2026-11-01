@@ -22,10 +22,10 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 }) => {
   return (
     <SkeletonBox
-      height={height}
-      width={width}
-      radius={radius}
-      className={cn('rounded-lg bg-muted/70', className)}
+      height={height ?? '100%'}
+      width={width ?? '100%'}
+      radius={radius ?? 'inherit'}
+      className={cn('inline-block max-w-full', className)}
       style={style}
       {...props}
     />

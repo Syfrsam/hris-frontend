@@ -99,6 +99,13 @@
   --input: #e2e8f0;
   --ring: #1358D0;
   --radius: 0.875rem;
+
+  /* Skullet Smart Skeleton Theme */
+  --skullet-base: #e2e8f0;
+  --skullet-highlight: rgba(255, 255, 255, 0.95);
+  --skullet-animation: shimmer;
+  --skullet-speed: slow;
+  --skullet-radius: 0.5rem;
 }
 
 .dark {
@@ -121,6 +128,36 @@
   --border: #2f2f3d;
   --input: #2f2f3d;
   --ring: #1358D0;
+
+  /* Skullet Smart Skeleton Theme (Dark Mode) */
+  --skullet-base: #2a2a38;
+  --skullet-highlight: rgba(255, 255, 255, 0.22);
+  --skullet-animation: shimmer;
+  --skullet-speed: slow;
+  --skullet-radius: 0.5rem;
+}
+
+@keyframes skullet-shimmer-wave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+[skullet-bar] {
+  display: block;
+  background-color: var(--skullet-base);
+  background-image: linear-gradient(
+    90deg,
+    var(--skullet-base) 0%,
+    var(--skullet-highlight) 50%,
+    var(--skullet-base) 100%
+  ) !important;
+  background-size: 250% 100% !important;
+  background-repeat: no-repeat !important;
+  animation: skullet-shimmer-wave 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
 }
 
 body {

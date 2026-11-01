@@ -28,7 +28,7 @@ import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Card, CardTitle, CardDescription } from '../ui/card'
 import { Input } from '../ui/input'
-import { Skeleton } from '../ui/skeleton'
+import { SkeletonBox } from '../ui/skeleton'
 
 export interface ManagedUser {
   id: number
@@ -142,7 +142,10 @@ export const UserRoleManagement: React.FC = () => {
     if (!isSilent) setIsLoading(true)
     setErrorMsg('')
     try {
-      const res = await userService.getUsers()
+      const [res] = await Promise.all([
+        userService.getUsers(),
+        !isSilent ? new Promise((r) => setTimeout(r, 400)) : Promise.resolve(),
+      ])
       if (res.data?.success) {
         setUsers(res.data.data.users || [])
       }
@@ -442,7 +445,7 @@ export const UserRoleManagement: React.FC = () => {
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
-              onClick={() => fetchUsers(true)}
+              onClick={() => fetchUsers(false)}
               disabled={isLoading}
               className="h-8.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
               title="Segarkan data pengguna"
@@ -496,7 +499,13 @@ export const UserRoleManagement: React.FC = () => {
                   <Icon icon={card.icon} size={13} className="text-primary shrink-0" />
                 )}
               </div>
-              <p className="text-xl font-medium mt-1 tabular-nums tracking-tight text-foreground">{card.count}</p>
+              <div className="mt-1 h-7 flex items-center">
+                {isLoading ? (
+                  <SkeletonBox height={22} width={38} radius={6} />
+                ) : (
+                  <p className="text-xl font-medium tabular-nums tracking-tight text-foreground">{card.count}</p>
+                )}
+              </div>
               <div className="mt-1.5 pt-1.5 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground font-normal">
                 <span className="truncate">{card.subtitle}</span>
                 <span className={isSelected ? 'text-primary font-medium' : 'text-muted-foreground/70'}>
@@ -630,28 +639,98 @@ export const UserRoleManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Loading State */}
+        {/* Loading State - 1:1 Exact Table & Mobile Card Skeleton */}
         {isLoading ? (
-          <div className="p-4 space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center justify-between py-2.5 px-3 border-b border-border/40">
-                <div className="flex items-center space-x-3 w-1/3">
-                  <Skeleton className="w-8 h-8 rounded-full shrink-0" />
-                  <div className="space-y-1.5 flex-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
+          <>
+            {/* Desktop Table View (>= 640px) */}
+            <div className="hidden sm:block overflow-x-auto rounded-xl border border-border/80">
+              <table className="w-full text-left border-collapse table-fixed">
+                <colgroup>
+                  <col className="w-[23%]" />
+                  <col className="w-[23%]" />
+                  <col className="w-[17%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[26%]" />
+                </colgroup>
+                <thead>
+                  <tr className="bg-muted/30 border-b border-border/80 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2.5 px-3">Pengguna</th>
+                    <th className="py-2.5 px-3">Data Karyawan</th>
+                    <th className="py-2.5 px-2.5 whitespace-nowrap">Peran & Hak Akses</th>
+                    <th className="py-2.5 px-2 whitespace-nowrap">Status Akun</th>
+                    <th className="py-2.5 px-3 text-right whitespace-nowrap">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 bg-card text-xs">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <tr key={i} className="hover:bg-muted/20 transition-colors">
+                      {/* User Info (Avatar + Name + Email) */}
+                      <td className="py-2.5 px-3 align-middle overflow-hidden">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <SkeletonBox width={32} height={32} radius="50%" className="shrink-0" />
+                          <div className="min-w-0 flex-1 space-y-1.5">
+                            <SkeletonBox height={14} width="72%" radius={4} />
+                            <SkeletonBox height={11} width="88%" radius={4} />
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Employee Info (NIP + Department Badge) */}
+                      <td className="py-2.5 px-3 align-middle overflow-hidden">
+                        <div className="space-y-1.5">
+                          <SkeletonBox height={13} width="65%" radius={4} />
+                          <SkeletonBox height={18} width="52%" radius={999} />
+                        </div>
+                      </td>
+
+                      {/* Roles & Permissions Badge */}
+                      <td className="py-2.5 px-2.5 align-middle whitespace-nowrap">
+                        <SkeletonBox height={22} width={90} radius={999} />
+                      </td>
+
+                      {/* Account Status Badge */}
+                      <td className="py-2.5 px-2 align-middle whitespace-nowrap">
+                        <SkeletonBox height={20} width={58} radius={999} />
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <SkeletonBox height={28} width={78} radius={8} />
+                          <SkeletonBox height={28} width={64} radius={8} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View (< 640px) */}
+            <div className="sm:hidden space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-3.5 rounded-2xl border border-border/80 bg-card space-y-3 shadow-2xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <SkeletonBox width={36} height={36} radius="50%" className="shrink-0" />
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <SkeletonBox height={14} width="75%" radius={4} />
+                        <SkeletonBox height={11} width="90%" radius={4} />
+                      </div>
+                    </div>
+                    <SkeletonBox height={20} width={52} radius={999} className="shrink-0" />
+                  </div>
+                  <div className="pt-2.5 border-t border-border/60 flex items-center justify-between gap-2">
+                    <SkeletonBox height={22} width={88} radius={999} />
+                    <div className="flex items-center gap-1.5">
+                      <SkeletonBox height={28} width={72} radius={8} />
+                      <SkeletonBox height={28} width={62} radius={8} />
+                    </div>
                   </div>
                 </div>
-                <Skeleton className="h-5 w-24 rounded-md" />
-                <Skeleton className="h-4 w-28 hidden sm:block" />
-                <Skeleton className="h-5 w-16 rounded-md hidden md:block" />
-                <div className="flex items-center gap-1.5">
-                  <Skeleton className="h-7 w-14 rounded-lg" />
-                  <Skeleton className="h-7 w-14 rounded-lg" />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         ) : errorMsg ? (
           /* Error State */
           <div className="p-10 text-center space-y-3">
